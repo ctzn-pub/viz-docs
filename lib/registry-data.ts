@@ -56,18 +56,6 @@ export const REGISTRY: Record<string, CategoryMeta> = {
     description: 'Components for GSS polling and opinion data',
     components: [
       {
-        id: 'timeseries-line-v1',
-        name: 'Time Series Line',
-        description: 'Multi-series line chart with error bars',
-        sampleData: 'abany_timetrend_overall.json',
-      },
-      {
-        id: 'abortion-opinion-v1',
-        name: 'Abortion Opinion Chart',
-        description: 'Specialized chart for abortion opinion trends',
-        sampleData: 'abany_timetrend_overall.json',
-      },
-      {
         id: 'timetrend-demo-v1',
         name: 'Time Trend Demo',
         description: 'Multi-series time trend with presidential term backgrounds and confidence intervals',
