@@ -20,6 +20,12 @@ export const REGISTRY: Record<string, CategoryMeta> = {
     description: 'Reusable chart components for any dataset',
     components: [
       {
+        id: 'timeseries-basic-v1',
+        name: 'Time Series (Basic)',
+        description: 'Simple time series line chart',
+        sampleData: 'housing.json',
+      },
+      {
         id: 'timeseries-dual-axis-v1',
         name: 'Dual Axis Chart',
         description: 'Time series with two Y-axes for different scales',
