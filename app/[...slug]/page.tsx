@@ -65,7 +65,6 @@ function prepareEssRows(
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const componentMap: Record<string, React.ComponentType<any>> = {
   'recharts/generic/timeseries-index-v1': dynamic(() => import('@/viz/components/recharts/generic/timeseries-index-v1')),
-  'recharts/generic/timeseries-metadata-v1': dynamic(() => import('@/viz/components/recharts/generic/timeseries-metadata-v1')),
   'recharts/generic/demographic-breakdown-v1': dynamic(() => import('@/viz/components/recharts/generic/demographic-breakdown-v1')),
   'recharts/brfss/state-bar-v1': dynamic(() => import('@/viz/components/recharts/brfss/state-bar-v1')),
   'recharts/brfss/state-bar-sortable-v1': dynamic(() => import('@/viz/components/recharts/brfss/state-bar-sortable-v1')),

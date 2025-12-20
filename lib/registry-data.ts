@@ -26,12 +26,6 @@ export const REGISTRY: Record<string, CategoryMeta> = {
         sampleData: 'housing.json',
       },
       {
-        id: 'timeseries-metadata-v1',
-        name: 'Time Series with Metadata',
-        description: 'Time series with rich metadata display',
-        sampleData: 'housing.json',
-      },
-      {
         id: 'demographic-breakdown-v1',
         name: 'Demographic Breakdown',
         description: 'Switchable chart (scatter/line/bar) with confidence intervals for demographic data',
