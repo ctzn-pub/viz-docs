@@ -64,14 +64,6 @@ function prepareEssRows(
 // Dynamic component imports - mapped by path
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const componentMap: Record<string, React.ComponentType<any>> = {
-  'recharts/generic/demographic-bar-v1': dynamic(() => import('@/viz/components/recharts/generic/demographic-bar-v1')),
-  'recharts/generic/demographic-dot-v1': dynamic(() => import('@/viz/components/recharts/generic/demographic-dot-v1')),
-  'recharts/generic/demographic-line-v1': dynamic(() => import('@/viz/components/recharts/generic/demographic-line-v1')),
-  'recharts/generic/histogram-v1': dynamic(() => import('@/viz/components/recharts/generic/histogram-v1')),
-  'recharts/generic/violin-v1': dynamic(() => import('@/viz/components/recharts/generic/violin-v1')),
-  'recharts/generic/timeseries-basic-v1': dynamic(() => import('@/viz/components/recharts/generic/timeseries-basic-v1')),
-  'recharts/generic/timeseries-dual-axis-v1': dynamic(() => import('@/viz/components/recharts/generic/timeseries-dual-axis-v1')),
-  'recharts/generic/timeseries-economic-v1': dynamic(() => import('@/viz/components/recharts/generic/timeseries-economic-v1')),
   'recharts/generic/timeseries-index-v1': dynamic(() => import('@/viz/components/recharts/generic/timeseries-index-v1')),
   'recharts/generic/timeseries-metadata-v1': dynamic(() => import('@/viz/components/recharts/generic/timeseries-metadata-v1')),
   'recharts/generic/demographic-breakdown-v1': dynamic(() => import('@/viz/components/recharts/generic/demographic-breakdown-v1')),

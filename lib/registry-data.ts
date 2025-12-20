@@ -20,54 +20,6 @@ export const REGISTRY: Record<string, CategoryMeta> = {
     description: 'Reusable chart components for any dataset',
     components: [
       {
-        id: 'demographic-bar-v1',
-        name: 'Demographic Bar Chart',
-        description: 'Horizontal bar chart with confidence intervals for demographic comparisons',
-        sampleData: 'brfss-demographic-data.json',
-      },
-      {
-        id: 'demographic-dot-v1',
-        name: 'Demographic Dot Plot',
-        description: 'Dot plot for comparing values across demographic groups',
-        sampleData: 'brfss-demographic-data.json',
-      },
-      {
-        id: 'demographic-line-v1',
-        name: 'Demographic Line Chart',
-        description: 'Line chart for demographic trend comparisons',
-        sampleData: 'brfss-demographic-data.json',
-      },
-      {
-        id: 'histogram-v1',
-        name: 'Histogram',
-        description: 'Frequency distribution histogram',
-        sampleData: 'county_sample.json',
-      },
-      {
-        id: 'violin-v1',
-        name: 'Violin Plot',
-        description: 'Distribution visualization combining box plot and density',
-        sampleData: 'county_sample.json',
-      },
-      {
-        id: 'timeseries-basic-v1',
-        name: 'Time Series (Basic)',
-        description: 'Simple time series line chart',
-        sampleData: 'housing.json',
-      },
-      {
-        id: 'timeseries-dual-axis-v1',
-        name: 'Dual Axis Chart',
-        description: 'Time series with two Y-axes for different scales',
-        sampleData: 'housing.json',
-      },
-      {
-        id: 'timeseries-economic-v1',
-        name: 'Economic Time Series',
-        description: 'Time series optimized for economic indicators',
-        sampleData: 'housing.json',
-      },
-      {
         id: 'timeseries-index-v1',
         name: 'Index Comparison',
         description: 'Normalized index comparison (rebased to 100)',
