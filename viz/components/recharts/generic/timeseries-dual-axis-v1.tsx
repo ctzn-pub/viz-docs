@@ -38,10 +38,10 @@ type TimeRangeType = '1Y' | '2Y' | '5Y' | 'MAX';
 
 const TimeRangeButton: React.FC<TimeRangeButtonProps> = ({ active, onClick, children }) => (
   <Button
-    variant={active ? "default" : "ghost"}
+    variant={active ? "secondary" : "ghost"}
     size="sm"
     onClick={onClick}
-    className={`transition-all ${active ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
+    className={`h-8 px-3 text-xs font-bold transition-all ${active ? 'shadow-sm bg-background border border-border' : 'text-muted-foreground hover:text-foreground'}`}
   >
     {children}
   </Button>
@@ -66,23 +66,22 @@ const DualAxisChart: React.FC<DualAxisChartProps> = ({
   series2Name,
   series1Unit,
   series2Unit,
-  title = "Housing Market Indicators",
+  title = "Economic Indicators",
   description
 }) => {
   const [timeRange, setTimeRange] = useState<TimeRangeType>('MAX');
-  const [showRecessions, setShowRecessions] = useState(true); // Added showRecessions state
+  const [showRecessions, setShowRecessions] = useState(true);
   const { theme } = useTheme();
 
   const colors = {
-    series1: '#4299e1',
-    series2: '#f59e0b',
-    recession: theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+    series1: 'var(--chart-1)',
+    series2: 'var(--chart-2)',
+    recession: 'var(--muted-foreground)'
   };
 
   const filteredData = React.useMemo(() => {
     if (!series1Data?.length || !series2Data?.length) return [];
 
-    // Use the latest data point as reference (not today's date)
     const latestDate1 = new Date(series1Data[series1Data.length - 1].date);
     const latestDate2 = new Date(series2Data[series2Data.length - 1].date);
     const now = new Date(Math.min(+latestDate1, +latestDate2));
@@ -144,22 +143,23 @@ const DualAxisChart: React.FC<DualAxisChartProps> = ({
   }: TooltipProps<ValueType, NameType>) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-background p-4 rounded-lg shadow-lg border border-border">
-          <p className="font-bold text-foreground">{formatDate(label || '')}</p>
-          {payload.map((entry) => (
-            <p
-              key={entry.dataKey}
-              className="text-sm text-muted-foreground flex items-center"
-            >
-              <span className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: entry.color }}></span>
-              <span>{entry.name}:</span>
-              <span className="ml-1 font-medium" style={{ color: entry.color }}>
-                {typeof entry.value === 'number'
-                  ? `${entry.value.toFixed(1)} ${entry.name === series1Name ? series1Unit : series2Unit}`
-                  : 'N/A'}
-              </span>
-            </p>
-          ))}
+        <div className="bg-popover/95 backdrop-blur-sm border border-border shadow-2xl rounded-xl p-4 min-w-[220px] animate-in fade-in zoom-in-95 duration-200">
+          <p className="font-bold text-foreground mb-3 pb-2 border-b border-border">{formatDate(label || '')}</p>
+          <div className="space-y-2">
+            {payload.map((entry) => (
+              <div key={entry.dataKey} className="flex justify-between items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }}></span>
+                  <span className="text-muted-foreground text-sm font-medium">{entry.name}:</span>
+                </div>
+                <span className="font-mono font-bold text-sm" style={{ color: entry.color }}>
+                  {typeof entry.value === 'number'
+                    ? `${entry.value.toFixed(1)}${entry.name === series1Name ? (series1Unit || '') : (series2Unit || '')}`
+                    : 'N/A'}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       );
     }
@@ -173,8 +173,8 @@ const DualAxisChart: React.FC<DualAxisChartProps> = ({
     );
     const min = Math.min(...values);
     const max = Math.max(...values);
-    const margin = (max - min) * 0.1;
-    return [min - margin, max + margin];
+    const margin = (max - min) * 0.15;
+    return [Math.max(0, min - margin), max + margin];
   }, [filteredData, series1Name]);
 
   const yAxis2Domain = React.useMemo(() => {
@@ -184,18 +184,19 @@ const DualAxisChart: React.FC<DualAxisChartProps> = ({
     );
     const min = Math.min(...values);
     const max = Math.max(...values);
-    const margin = (max - min) * 0.1;
-    return [min - margin, max + margin];
+    const margin = (max - min) * 0.15;
+    return [Math.max(0, min - margin), max + margin];
   }, [filteredData, series2Name]);
 
 
   return (
-    <div className="w-full bg-background shadow-lg rounded-lg border">
-      <div className="flex flex-row items-center justify-between space-y-0 pb-2 p-6">
-        <h3 className="text-base font-medium">
-          {title}
-        </h3>
-        <div className="flex items-center space-x-2">
+    <div className="w-full bg-card text-card-foreground border border-border rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6 mb-6">
+        <div className="space-y-1">
+          <h3 className="text-xl font-bold tracking-tight">{title}</h3>
+          {description && <p className="text-sm text-muted-foreground">{description}</p>}
+        </div>
+        <div className="flex items-center bg-muted/50 p-1 rounded-lg border border-border self-start">
           {timeRanges.map((range) => (
             <TimeRangeButton
               key={range}
@@ -208,127 +209,123 @@ const DualAxisChart: React.FC<DualAxisChartProps> = ({
         </div>
       </div>
 
-      <div className="p-6 pt-0">
-        {description && (
-          <p className="text-sm text-gray-600 mb-6">{description}</p>
-        )}
-        <div className="h-96">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={filteredData}
-              margin={{ top: 50, right: 60, left: 0, bottom: 0 }}
-            >
-              <CartesianGrid
-                strokeDasharray="3 3"
-                className="stroke-muted"
-                vertical={false}
-              />
-              <Legend
-                verticalAlign="top"
-                align="left"
-                height={36}
-                iconType="circle"
-                wrapperStyle={{
-                  paddingBottom: '20px'
-                }}
-                formatter={(value) => (
-                  <span className="text-sm text-muted-foreground">{value}</span>
-                )}
-              />
-              <Brush
-                dataKey="date"
-                height={30}
-                stroke="#8884d8"
-                fill="#fff"
-                tickFormatter={formatDate}
-                travellerWidth={10}
-                startIndex={0}
-                endIndex={filteredData.length - 1}
-              >
-                <LineChart>
-                  <Line dataKey={series1Name} stroke={colors.series1} dot={false} />
-                  <Line dataKey={series2Name} stroke={colors.series2} dot={false} />
-                </LineChart>
-              </Brush>
-              <XAxis
-                dataKey="date"
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={formatDate}
-                tick={{ fill: theme === 'dark' ? '#9CA3AF' : '#6B7280', fontSize: 12 }}
-                dy={10}
-                minTickGap={5}
-                interval="preserveStartEnd"
-              />
-              <YAxis
-                yAxisId="left"
-                domain={yAxis1Domain}
-                orientation="left"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: theme === 'dark' ? '#9CA3AF' : '#6B7280', fontSize: 12 }}
-                width={60}
-                dx={-10}
-                label={{
-                  value: series1Unit,
-                  angle: -90,
-                  position: 'insideLeft',
-                  style: { fill: colors.series1, fontSize: 12 }
-                }}
-                tickFormatter={(value) => value.toFixed(1)}
-              />
-              <YAxis
-                yAxisId="right"
-                domain={yAxis2Domain}
-                orientation="right"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: theme === 'dark' ? '#9CA3AF' : '#6B7280', fontSize: 12 }}
-                width={60}
-                dx={10}
-                label={{
-                  value: series2Unit,
-                  angle: 90,
-                  position: 'insideRight',
-                  style: { fill: colors.series2, fontSize: 12 }
-                }}
-                tickFormatter={(value) => value.toFixed(1)}
-              />
-              <Tooltip
-                content={(props: TooltipProps<ValueType, NameType>) => <CustomTooltip {...props} />}
-              />
-               {showRecessions && recessionPeriods.map((period, index) => (
-                <ReferenceArea
-                  key={index}
-                  x1={period.start}
-                  x2={period.end}
-                  className="fill-muted"
-                  fillOpacity={0.4}
-                  alwaysShow={true}
-                  ifOverflow="visible"
-                />
-              ))}
+      <div className="h-[450px] w-full relative">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={filteredData} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" strokeOpacity={0.4} />
 
-              <Line
-                yAxisId="left"
-                type="monotone"
-                dataKey={series1Name}
-                stroke={colors.series1}
-                strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 6, fill: colors.series1 }}
-              />        
-              <Line
-                yAxisId="right"
-                type="monotone"
-                dataKey={series2Name}
-                stroke={colors.series2}
-                strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 6, fill: colors.series2 }}
+            <Legend
+              verticalAlign="top"
+              align="center"
+              height={40}
+              iconType="circle"
+              iconSize={8}
+              formatter={(value) => (
+                <span className="text-xs font-bold text-foreground/80 lowercase tracking-wider ml-1">{value}</span>
+              )}
+            />
+
+            <XAxis
+              dataKey="date"
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={formatDate}
+              tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
+              dy={10}
+              minTickGap={30}
+            />
+
+            <YAxis
+              yAxisId="left"
+              domain={yAxis1Domain}
+              orientation="left"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: colors.series1, fontSize: 11, fontWeight: 600 }}
+              width={50}
+              tickFormatter={(value) => value.toFixed(0)}
+              label={{
+                value: series1Unit,
+                angle: -90,
+                position: 'insideLeft',
+                style: { fill: colors.series1, fontSize: 10, fontWeight: 700, textTransform: 'uppercase' }
+              }}
+            />
+
+            <YAxis
+              yAxisId="right"
+              domain={yAxis2Domain}
+              orientation="right"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: colors.series2, fontSize: 11, fontWeight: 600 }}
+              width={50}
+              tickFormatter={(value) => value.toFixed(0)}
+              label={{
+                value: series2Unit,
+                angle: 90,
+                position: 'insideRight',
+                style: { fill: colors.series2, fontSize: 10, fontWeight: 700, textTransform: 'uppercase' }
+              }}
+            />
+
+            <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--border)', strokeWidth: 1 }} />
+
+            {showRecessions && recessionPeriods.map((period, index) => (
+              <ReferenceArea
+                key={index}
+                x1={period.start}
+                x2={period.end}
+                fill="var(--muted)"
+                fillOpacity={0.15}
+                ifOverflow="visible"
               />
-            </LineChart>
-          </ResponsiveContainer>
+            ))}
+
+            <Line
+              yAxisId="left"
+              type="monotone"
+              dataKey={series1Name}
+              stroke={colors.series1}
+              strokeWidth={3}
+              dot={false}
+              activeDot={{ r: 6, strokeWidth: 0, fill: colors.series1 }}
+              isAnimationActive={true}
+              animationDuration={1500}
+            />
+            <Line
+              yAxisId="right"
+              type="monotone"
+              dataKey={series2Name}
+              stroke={colors.series2}
+              strokeWidth={3}
+              dot={false}
+              activeDot={{ r: 6, strokeWidth: 0, fill: colors.series2 }}
+              isAnimationActive={true}
+              animationDuration={1500}
+            />
+
+            <Brush
+              dataKey="date"
+              height={30}
+              stroke="var(--border)"
+              fill="var(--background)"
+              tickFormatter={formatDate}
+              travellerWidth={8}
+            >
+              <LineChart>
+                <Line dataKey={series1Name} stroke={colors.series1} strokeWidth={1} dot={false} />
+                <Line dataKey={series2Name} stroke={colors.series2} strokeWidth={1} dot={false} />
+              </LineChart>
+            </Brush>
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="mt-8 flex items-center gap-4 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/50">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-2 bg-muted/40 rounded-sm" />
+          <span>Gray shaded areas represent US recessions</span>
         </div>
       </div>
     </div>

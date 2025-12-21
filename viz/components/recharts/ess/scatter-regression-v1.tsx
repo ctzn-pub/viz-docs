@@ -88,11 +88,11 @@ function lineAndBand(points: XY[], xMin: number, xMax: number, steps = 120) {
 type RegionKey = "Catholic" | "Protestant" | "Orthodox" | "Muslim" | "Other";
 
 const REGION_COLORS: Record<RegionKey, string> = {
-  Catholic: "#facc15",    // gold
-  Protestant: "#52525b",  // zinc-600
-  Orthodox: "#3b82f6",    // blue-500
-  Muslim: "#ef4444",      // red-500
-  Other: "#22c55e",       // green-500
+  Catholic: "var(--chart-1)",
+  Protestant: "var(--chart-2)",
+  Orthodox: "var(--chart-3)",
+  Muslim: "var(--chart-4)",
+  Other: "var(--chart-5)",
 };
 
 function normalizeReligion(s: string | undefined): RegionKey {
@@ -154,49 +154,47 @@ export function prepareEssRows(
 
 function fmtGDP(v: number) {
   if (!isFinite(v)) return "";
-  if (Math.abs(v) >= 1000) return `${Math.round(v / 1000)}k`;
+  if (v >= 1000) return `${(v / 1000).toFixed(0)}k`;
   return `${v}`;
 }
 function fmtMillions(v: number) {
   if (!isFinite(v)) return "";
-  // keep 1 decimal for < 10M else integer-ish
-  return v < 10 ? `${v.toFixed(1)} Million` : `${Math.round(v)} Million`;
+  return v < 10 ? `${v.toFixed(1)}M` : `${Math.round(v)}M`;
 }
 
-const BubbleTooltip = ({ active, payload, label, xLabel, xFmt }: any) => {
+const BubbleTooltip = ({ active, payload, xLabel, xFmt }: any) => {
   if (!active || !payload || !payload.length) return null;
   const d = payload[0].payload;
 
   return (
-    <div className="relative max-w-xs rounded-xl bg-white/95 p-3 shadow-xl ring-1 ring-black/5">
-      {/* little pointer */}
-      <div
-        className="absolute -bottom-2 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 rounded-sm bg-white ring-1 ring-black/5"
-        aria-hidden
-      />
-      <div className="text-base font-semibold">{d.name}</div>
-      <div className="mt-1 text-sm leading-5">
-        <div>
-          <span className="font-semibold">{xLabel}:</span>{" "}
-          {xFmt ? xFmt(d.x) : d.x}
+    <div className="bg-popover/95 backdrop-blur-sm border border-border shadow-2xl rounded-xl p-4 min-w-[200px] animate-in fade-in zoom-in-95 duration-200">
+      <div className="font-bold text-foreground mb-2 pb-2 border-b border-border">{d.name}</div>
+      <div className="space-y-1.5 text-sm">
+        <div className="flex justify-between items-center gap-4">
+          <span className="text-muted-foreground font-medium">{xLabel}:</span>
+          <span className="font-mono font-semibold">{xFmt ? xFmt(d.x) : d.x}</span>
         </div>
-        <div>
-          <span className="font-semibold">Average Happiness:</span>{" "}
-          {isFinite(d.y) ? Number(d.y).toFixed(2) : "—"}
+        <div className="flex justify-between items-center gap-4">
+          <span className="text-muted-foreground font-medium">Happiness:</span>
+          <span className="font-mono font-semibold text-primary">
+            {isFinite(d.y) ? Number(d.y).toFixed(2) : "—"}
+          </span>
         </div>
         {isFinite(d.population_m) && (
-          <div>
-            <span className="font-semibold">Population:</span>{" "}
-            {fmtMillions(d.population_m)}
+          <div className="flex justify-between items-center gap-4">
+            <span className="text-muted-foreground font-medium">Population:</span>
+            <span className="font-mono font-semibold">{fmtMillions(d.population_m)}</span>
           </div>
         )}
-        <div className="flex items-center gap-1">
-          <span className="font-semibold">Religion:</span>
-          <span
-            className="inline-block h-2.5 w-2.5 rounded-full"
-            style={{ background: d.fill }}
-          />
-          <span>{d.religion}</span>
+        <div className="flex justify-between items-center gap-4 mt-2 pt-2 border-t border-border">
+          <span className="text-muted-foreground font-medium">Religion:</span>
+          <div className="flex items-center gap-2">
+            <span
+              className="inline-block h-2.5 w-2.5 rounded-full shadow-sm"
+              style={{ background: d.fill }}
+            />
+            <span className="font-medium">{d.religion}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -217,13 +215,6 @@ type SectionProps = {
 };
 
 function Section({ title, xKey, xLabel, xDomain, xTickFmt, data }: SectionProps) {
-  // Debug happiness values
-  if (title.includes("Human Development") && data.length > 0) {
-    console.log(`${title} - Sample happiness values:`,
-      data.slice(0, 5).map(d => `${d.name}: ${d.happiness}`)
-    );
-  }
-
   // Filter & project to points
   const points: XY[] = data
     .filter((d) => Number.isFinite(d[xKey] as number) && Number.isFinite(d.happiness))
@@ -233,7 +224,6 @@ function Section({ title, xKey, xLabel, xDomain, xTickFmt, data }: SectionProps)
   const [xMin, xMax] = xDomain;
   const { line, band } = lineAndBand(points, xMin, xMax, 100);
 
-  // Recharts expects each scatter row to carry x/y/z + your other fields
   const scatterData = data.map((d) => {
     const x = Number(d[xKey] as number);
     const y = Number(d.happiness);
@@ -241,65 +231,80 @@ function Section({ title, xKey, xLabel, xDomain, xTickFmt, data }: SectionProps)
       ...d,
       x,
       y,
-      // bubble area ~ sqrt(pop) -> visually closer to population without extreme skew
-      z: isFinite(d.population_m) ? Math.max(24, Math.sqrt(d.population_m) * 4) : 24,
-      fill: REGION_COLORS[d.region] || "#8884d8",
+      z: isFinite(d.population_m) ? Math.max(30, Math.sqrt(d.population_m) * 5) : 30,
+      fill: REGION_COLORS[d.region] || "var(--chart-5)",
     };
   });
 
   return (
-    <div className="flex flex-col">
-      <div className="mb-1 text-lg md:text-xl font-semibold">{title}</div>
-      <div className="h-[340px] w-full">
-        <ResponsiveContainer>
-          <ComposedChart margin={{ top: 8, right: 18, bottom: 8, left: 8 }}>
-            <CartesianGrid strokeDasharray="3 3" />
+    <div className="flex flex-col bg-card/40 backdrop-blur-[2px] border border-border/50 rounded-2xl p-5 hover:bg-card/60 transition-colors duration-300">
+      <div className="mb-4 space-y-1">
+        <h3 className="text-sm font-bold tracking-tight text-foreground uppercase ls-wide">{title}</h3>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-muted-foreground">Correlation:</span>
+          <span className={`text-xs font-mono font-bold ${Math.abs(r) > 0.5 ? 'text-primary' : 'text-muted-foreground'}`}>
+            {isFinite(r) ? r.toFixed(2) : "—"}
+          </span>
+        </div>
+      </div>
+
+      <div className="h-[300px] w-full mt-2">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart margin={{ top: 10, right: 10, bottom: 20, left: -20 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" strokeOpacity={0.4} />
             <XAxis
               type="number"
               dataKey="x"
               domain={xDomain}
               tickFormatter={xTickFmt}
-              label={{ value: xLabel, position: "insideBottom", offset: -2 }}
+              tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
+              axisLine={false}
+              tickLine={false}
+              label={{ value: xLabel, position: "insideBottom", offset: -5, fontSize: 10, fill: 'var(--muted-foreground)', fontWeight: 500 }}
             />
             <YAxis
               type="number"
               domain={['dataMin - 0.5', 'dataMax + 0.5']}
-              label={{ value: "Average Happiness", angle: -90, position: "insideLeft" }}
+              tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
+              axisLine={false}
+              tickLine={false}
+              label={{ value: "Happiness", angle: -90, position: "insideLeft", offset: 10, fontSize: 10, fill: 'var(--muted-foreground)', fontWeight: 500 }}
             />
-            <ZAxis dataKey="z" range={[50, 240]} />
+            <ZAxis dataKey="z" range={[60, 400]} />
 
-            {/* Confidence band (as in BandedChart) */}
             <Area
               type="monotone"
               data={band}
-              dataKey="band"                                    // [low, high]
+              dataKey="band"
               stroke="none"
-              fill="#94a3b8"                                   // slate-400
-              fillOpacity={0.22}
-              isAnimationActive={false}
+              fill="var(--foreground)"
+              fillOpacity={0.05}
+              isAnimationActive={true}
+              animationDuration={2000}
             />
 
-            {/* Line of best fit */}
             <Line
               type="monotone"
               data={line}
               dataKey="y"
               dot={false}
-              stroke="#475569"                                  // slate-600
-              strokeWidth={2}
-              isAnimationActive={false}
+              stroke="var(--foreground)"
+              strokeWidth={1.5}
+              strokeOpacity={0.6}
+              strokeDasharray="4 4"
+              isAnimationActive={true}
+              animationDuration={2000}
             />
 
-            {/* A light guide at 7 like the mock */}
-            <ReferenceLine y={7} stroke="#cbd5e1" strokeDasharray="4 4" />
+            <ReferenceLine y={7} stroke="var(--border)" strokeDasharray="3 3" />
 
-            {/* Bubbles */}
             <Scatter
               data={scatterData}
               dataKey="y"
+              isAnimationActive={true}
+              animationDuration={1500}
               shape={(props: any) => {
                 const { cx, cy, payload, size } = props;
-                // Recharts passes 'size' scaled by <ZAxis range>; treat it as area.
                 const r = Math.sqrt(Math.max(0, size) / Math.PI);
                 return (
                   <circle
@@ -307,27 +312,22 @@ function Section({ title, xKey, xLabel, xDomain, xTickFmt, data }: SectionProps)
                     cy={cy}
                     r={r}
                     fill={payload.fill}
-                    fillOpacity={0.9}
-                    stroke="#334155"
-                    strokeOpacity={0.35}
+                    fillOpacity={0.8}
+                    stroke="var(--background)"
+                    strokeWidth={1.5}
+                    className="hover:opacity-100 transition-opacity drop-shadow-sm cursor-pointer"
                   />
                 );
               }}
             />
 
             <Tooltip
-              cursor={{ strokeDasharray: "3 3" }}
-              content={
-                // We pass the axis label and formatter so the tooltip can render the x-value correctly.
-                <BubbleTooltip xLabel={xLabel} xFmt={xTickFmt} /> as any
-              }
+              cursor={{ stroke: 'var(--muted-foreground)', strokeWidth: 1, strokeDasharray: '4 4' }}
+              content={<BubbleTooltip xLabel={xLabel} xFmt={xTickFmt} />}
               wrapperStyle={{ outline: "none" }}
             />
           </ComposedChart>
         </ResponsiveContainer>
-      </div>
-      <div className="mt-1 text-xs text-violet-700">
-        Correlation: {isFinite(r) ? r.toFixed(2) : "—"}
       </div>
     </div>
   );
@@ -339,11 +339,11 @@ function Section({ title, xKey, xLabel, xDomain, xTickFmt, data }: SectionProps)
 function RegionLegend() {
   const items = (Object.keys(REGION_COLORS) as RegionKey[]).map((k) => [k, REGION_COLORS[k]] as const);
   return (
-    <div className="flex flex-wrap items-center gap-3 text-sm">
+    <div className="flex flex-wrap items-center justify-center gap-6 px-4 py-3 bg-muted/30 rounded-xl border border-border/50">
       {items.map(([label, color]) => (
-        <div key={label} className="flex items-center gap-1">
-          <span className="inline-block h-3 w-3 rounded-full" style={{ background: color }} />
-          <span>{label}</span>
+        <div key={label} className="flex items-center gap-2 group cursor-default">
+          <span className="inline-block h-3 w-3 rounded-full shadow-sm group-hover:scale-125 transition-transform" style={{ background: color }} />
+          <span className="text-xs font-semibold text-muted-foreground group-hover:text-foreground transition-colors">{label}</span>
         </div>
       ))}
     </div>
@@ -356,34 +356,36 @@ function RegionLegend() {
 
 type PanelProps = { data: CountryDatum[] };
 
-/**
- * Expect `data` shaped like `CountryDatum[]`.
- * If you're piping raw rows from the attached Excel, call `prepareEssRows(rows, { happinessKey: 'happiness' })`
- * where `happiness` is the column in your prepared dataset that contains 0–10 averages.
- */
 export default function HappinessCorrelatesPanel({ data }: PanelProps) {
   const dataset = data ?? [];
 
   return (
-    <div className="w-full p-4 md:p-6">
-      <div className="grid items-start gap-8 md:grid-cols-3">
+    <div className="w-full bg-card text-card-foreground border border-border rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300">
+      <div className="mb-8 space-y-2 border-b border-border pb-6">
+        <h2 className="text-2xl font-bold tracking-tight">Well-being Determinants</h2>
+        <p className="text-muted-foreground max-w-2xl">
+          Exploring the relationship between national happiness levels and key socio-economic indicators across different religious regions.
+        </p>
+      </div>
+
+      <div className="grid items-start gap-6 lg:grid-cols-3">
         <Section
-          title="Human Development Index"
+          title="Human Development"
           xKey="hdi"
-          xLabel="HDI"
+          xLabel="HDI Index"
           xDomain={[0.5, 1.0]}
           data={dataset}
         />
         <Section
-          title="GDP per capita (2011 PPP$)"
+          title="Economic Prosperity"
           xKey="gdp"
-          xLabel="GDP per capita (2011 PPP$)"
+          xLabel="GDP per capita (PPP$)"
           xDomain={[3000, 55000]}
           xTickFmt={fmtGDP}
           data={dataset}
         />
         <Section
-          title="Mean Year of Schooling"
+          title="Education Attainment"
           xKey="education"
           xLabel="Mean Years of Schooling"
           xDomain={[8, 14]}
@@ -391,8 +393,11 @@ export default function HappinessCorrelatesPanel({ data }: PanelProps) {
         />
       </div>
 
-      <div className="mt-5">
+      <div className="mt-8 flex flex-col items-center gap-4">
         <RegionLegend />
+        <div className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground/40">
+          Bubble size represents population · Dashed line shows guide at happiness level 7.0
+        </div>
       </div>
     </div>
   );

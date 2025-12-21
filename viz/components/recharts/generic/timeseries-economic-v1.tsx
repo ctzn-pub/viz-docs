@@ -1,4 +1,4 @@
-'use client' 
+'use client'
 import React, { useState, useEffect, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea, Brush } from 'recharts';
 import { Button } from "@/viz/ui/button";
@@ -60,26 +60,13 @@ const formatValue = (value: number): string => {
 };
 
 const calculatePercentChange = (current: number, previous: number): number => {
+  if (previous === 0) return 0;
   return ((current - previous) / previous) * 100;
-};
-
-const calculateYearOverYear = (data: DataPoint[]): number | null => {
-  if (data.length < 12) return null;
-  const current = data[data.length - 1].value;
-  const yearAgo = data[data.length - 12].value;
-  return calculatePercentChange(current, yearAgo);
-};
-
-const calculate3MonthAverage = (data: DataPoint[]): string | null => {
-  if (data.length < 3) return null;
-  const last3Months = data.slice(-3);
-  const average = last3Months.reduce((sum, point) => sum + point.value, 0) / 3;
-  return average.toFixed(1);
 };
 
 const calculateStats = (data: DataPoint[]): Stats => {
   if (!data.length) return { avg: '0', max: '0', min: '0', trend: 0 };
-  
+
   const values = data.map((d) => d.value);
   const firstValue = values[0];
   const lastValue = values[values.length - 1];
@@ -92,6 +79,22 @@ const calculateStats = (data: DataPoint[]): Stats => {
     trend
   };
 };
+
+const recessionPeriods = [
+  { start: '2020-02-01', end: '2020-04-01' },
+  { start: '2007-12-01', end: '2009-06-01' },
+  { start: '2001-03-01', end: '2001-11-01' },
+  { start: '1990-07-01', end: '1991-03-01' },
+  { start: '1981-07-01', end: '1982-11-01' },
+  { start: '1980-01-01', end: '1980-07-01' },
+  { start: '1973-11-01', end: '1975-03-01' },
+  { start: '1969-12-01', end: '1970-11-01' },
+  { start: '1960-04-01', end: '1961-02-01' },
+  { start: '1957-08-01', end: '1958-04-01' },
+  { start: '1953-07-01', end: '1954-05-01' },
+  { start: '1948-11-01', end: '1949-10-01' },
+  { start: '1945-02-01', end: '1945-10-01' },
+];
 
 const TimeSeries: React.FC<TimeSeriesProps> = ({ data }) => {
   const [showRecessions, setShowRecessions] = useState(true);
@@ -111,23 +114,9 @@ const TimeSeries: React.FC<TimeSeriesProps> = ({ data }) => {
 
   const filteredData = processedData;
   const stats = calculateStats(filteredData);
-  const currentValue = filteredData[filteredData.length - 1]?.value || 0;
-
-  const recessionPeriods = [
-    { start: '2020-02-01', end: '2020-04-01' },
-    { start: '2007-12-01', end: '2009-06-01' },
-    { start: '2001-03-01', end: '2001-11-01' },
-    { start: '1990-07-01', end: '1991-03-01' },
-    { start: '1981-07-01', end: '1982-11-01' },
-    { start: '1980-01-01', end: '1980-07-01' },
-    { start: '1973-11-01', end: '1975-03-01' },
-    { start: '1969-12-01', end: '1970-11-01' },
-    { start: '1960-04-01', end: '1961-02-01' },
-    { start: '1957-08-01', end: '1958-04-01' },
-    { start: '1953-07-01', end: '1954-05-01' },
-    { start: '1948-11-01', end: '1949-10-01' },
-    { start: '1945-02-01', end: '1945-10-01' },
-  ];
+  const lastPoint = filteredData[filteredData.length - 1];
+  const currentValue = lastPoint?.value || 0;
+  const currentTrend = lastPoint?.percentChange || 0;
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('en-US', {
@@ -146,94 +135,120 @@ const TimeSeries: React.FC<TimeSeriesProps> = ({ data }) => {
     });
     const value = formatValue(data.value);
     const percentChange = data.percentChange.toFixed(1);
-    const color =
-      data.percentChange > 0
-        ? 'text-green-500'
-        : data.percentChange < 0
-        ? 'text-red-500'
-        : 'text-gray-500';
+    const isUp = data.percentChange > 0;
+    const isDown = data.percentChange < 0;
 
     return (
-      <div className="bg-popover/80 backdrop-blur p-2 rounded-lg border shadow-lg">
-        <div className="text-sm font-medium">{date}</div>
-        <div className="text-lg font-bold">{value}</div>
-        <div className={`text-sm ${color}`}>
-          {percentChange}% from previous
+      <div className="bg-popover/95 backdrop-blur-sm border border-border shadow-2xl rounded-xl p-4 min-w-[200px] animate-in fade-in zoom-in-95 duration-200">
+        <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 pb-2 border-b border-border">{date}</div>
+        <div className="space-y-1">
+          <div className="text-2xl font-mono font-black text-foreground">{value}</div>
+          <div className={`flex items-center gap-1.5 text-xs font-bold ${isUp ? 'text-emerald-500' : isDown ? 'text-red-500' : 'text-muted-foreground'}`}>
+            {isUp ? <TrendingUp size={14} strokeWidth={2.5} /> : isDown ? <TrendingDown size={14} strokeWidth={2.5} /> : null}
+            <span>{Math.abs(data.percentChange).toFixed(1)}% {isUp ? 'increase' : isDown ? 'decrease' : 'change'}</span>
+          </div>
         </div>
       </div>
     );
   };
 
   return (
-    <div className="w-full bg-background shadow-lg rounded-lg border">
-      <div className="pb-4 p-6">
-        <div className="flex flex-col md:flex-row justify-between items-start space-y-4 md:space-y-0 md:space-x-4">
-          <div>
-            <h3 className="text-2xl font-bold text-foreground">
-              {data.short_title || data.title.split(':')[0]}
-            </h3>
-            <p className="text-sm text-gray-600 mt-1">
-              {data.title}
-            </p>
+    <div className="w-full bg-card text-card-foreground border border-border rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300">
+      <div className="flex flex-col md:flex-row justify-between items-start gap-4 border-b border-border pb-6 mb-6">
+        <div className="space-y-1">
+          <h3 className="text-2xl font-black tracking-tighter uppercase italic text-foreground/90">
+            {data.short_title || data.title.split(':')[0]}
+          </h3>
+          <p className="text-xs font-medium text-muted-foreground max-w-xl">
+            {data.title}
+          </p>
+        </div>
+        <div className="flex flex-col items-end gap-1 px-4 py-2 bg-muted/30 border border-border/50 rounded-xl">
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Latest Value</span>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-mono font-black text-primary tracking-tighter">{formatValue(currentValue)}</span>
+            <span className={`text-xs font-bold ${currentTrend >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+              {currentTrend >= 0 ? '+' : ''}{currentTrend.toFixed(1)}%
+            </span>
           </div>
         </div>
       </div>
-      <div className="p-6 pt-0">
-        <div className="h-[400px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={filteredData}
-              margin={{ top: 20, right: 30, left: 50, bottom: 0 }}
-            >
-              <CartesianGrid
-                strokeDasharray="3 3"
-                className="stroke-muted"
-                vertical={false}
-              />
-              <XAxis
-                dataKey="date"
-                tickFormatter={formatDate}
-                minTickGap={30}
-                tick={{ fill: theme === 'dark' ? '#9CA3AF' : '#6B7280' }}
-              />
-              <YAxis
-                domain={['auto', 'auto']}
-                tickFormatter={formatValue}
-                tick={{ fill: theme === 'dark' ? '#9CA3AF' : '#6B7280' }}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Line
-                type="monotone"
-                dataKey="value"
-                dot={false}
-                stroke="#4299e1"
-                strokeWidth={2}
-              />
-              <Brush
-                dataKey="date"
-                height={30}
-                stroke={theme === 'dark' ? '#6366f1' : '#8884d8'}
-                fill={theme === 'dark' ? '#1f2937' : '#f3f4f6'}
-                tickFormatter={formatDate}
-                travellerWidth={10}
-              >
-                <LineChart>
-                  <Line dataKey="value" stroke="#4299e1" dot={false} />
-                </LineChart>
-              </Brush>
-              {showRecessions && recessionPeriods.map((period, index) => (
-                <ReferenceArea
-                  key={index}
-                  x1={period.start}
-                  x2={period.end}
-                  fill="currentColor"
-                  fillOpacity={0.1}
-                  strokeOpacity={0}
-                />
-              ))}
-            </LineChart>
 
-          </ResponsiveContainer>
+      <div className="h-[400px] w-full relative">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={filteredData} margin={{ top: 20, right: 10, left: 30, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" strokeOpacity={0.4} />
+
+            <XAxis
+              dataKey="date"
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={formatDate}
+              minTickGap={40}
+              tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
+            />
+
+            <YAxis
+              domain={['auto', 'auto']}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={formatValue}
+              tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
+              width={60}
+            />
+
+            <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--primary)', strokeWidth: 1, strokeDasharray: '4 4' }} />
+
+            {showRecessions && recessionPeriods.map((period, index) => (
+              <ReferenceArea
+                key={index}
+                x1={period.start}
+                x2={period.end}
+                fill="var(--muted)"
+                fillOpacity={0.12}
+                ifOverflow="visible"
+              />
+            ))}
+
+            <Line
+              type="monotone"
+              dataKey="value"
+              dot={false}
+              stroke="var(--chart-1)"
+              strokeWidth={3}
+              activeDot={{ r: 6, strokeWidth: 0, fill: 'var(--chart-1)' }}
+              isAnimationActive={true}
+              animationDuration={1500}
+            />
+
+            <Brush
+              dataKey="date"
+              height={30}
+              stroke="var(--border)"
+              fill="var(--background)"
+              tickFormatter={formatDate}
+              travellerWidth={8}
+              gap={5}
+            >
+              <LineChart>
+                <Line dataKey="value" stroke="var(--chart-1)" strokeWidth={1} dot={false} />
+              </LineChart>
+            </Brush>
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="mt-8 flex flex-wrap items-center gap-6 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/50 border-t border-border pt-6">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-2 bg-muted/40 rounded-sm" />
+          <span>Shaded Areas: US Recessions</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Grid3X3 size={12} className="opacity-50" />
+          <span>Units: {data.units}</span>
+        </div>
+        <div className="ml-auto">
+          SOURCE: FRED ST. LOUIS FED
         </div>
       </div>
     </div>

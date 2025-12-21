@@ -12,6 +12,7 @@ import {
   Cell
 } from 'recharts';
 import { calculateQuartiles, kernelDensity } from '@/viz/utils/statistical-utils';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 export interface ViolinPlotDataPoint {
   category: string;
@@ -25,6 +26,7 @@ export interface ViolinPlotProps {
   xlabel?: string;
   ylabel?: string;
   title?: string;
+  description?: string;
   showBox?: boolean;
 }
 
@@ -34,7 +36,8 @@ export default function ViolinPlot({
   height = 500,
   xlabel = 'Category',
   ylabel = 'Value',
-  title,
+  title = "Distribution Analysis",
+  description,
   showBox = true
 }: ViolinPlotProps) {
   const { violinShapes, scatterData, yDomain } = useMemo(() => {
@@ -75,7 +78,7 @@ export default function ViolinPlot({
     const allValues = data.flatMap(d => d.values);
     const minVal = Math.min(...allValues);
     const maxVal = Math.max(...allValues);
-    const padding = (maxVal - minVal) * 0.1;
+    const padding = (maxVal - minVal) * 0.15;
 
     return {
       violinShapes: shapes,
@@ -86,95 +89,101 @@ export default function ViolinPlot({
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
-      const data = payload[0].payload;
+      const d = payload[0].payload;
       return (
-        <div className="bg-white dark:bg-gray-800 p-3 border rounded shadow-lg">
-          <p className="font-semibold">{data.category}</p>
-          <p className="text-sm">Value: {data.value?.toFixed(2) || 'N/A'}</p>
+        <div className="bg-popover/95 backdrop-blur-sm border border-border shadow-2xl rounded-xl p-4 min-w-[180px] animate-in fade-in zoom-in-95 duration-200">
+          <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 pb-2 border-b border-border">{d.category}</div>
+          <div className="flex justify-between items-center gap-4">
+            <span className="text-muted-foreground text-sm font-medium">Density Value:</span>
+            <span className="text-lg font-mono font-black text-primary tracking-tighter">{d.value?.toFixed(2) || 'N/A'}</span>
+          </div>
         </div>
       );
     }
     return null;
   };
 
-  // Render box plot overlay
-  const renderBoxes = () => {
-    if (!showBox) return null;
-
-    return violinShapes.map((shape, idx) => {
-      const { q1, median, q3 } = shape.quartiles;
-      const categoryX = idx;
-
-      return (
-        <g key={`box-${idx}`}>
-          {/* Median line */}
-          <line
-            x1={categoryX - 0.1}
-            y1={median}
-            x2={categoryX + 0.1}
-            y2={median}
-            stroke="white"
-            strokeWidth={3}
-          />
-          {/* Q1-Q3 box */}
-          <rect
-            x={categoryX - 0.08}
-            y={q3}
-            width={0.16}
-            height={q1 - q3}
-            fill="none"
-            stroke="white"
-            strokeWidth={2}
-          />
-        </g>
-      );
-    });
-  };
-
   return (
-    <div className="w-full">
-      {title && <h3 className="text-lg font-semibold mb-4">{title}</h3>}
-      <ResponsiveContainer width={width || '100%'} height={height}>
-        <ComposedChart margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis
-            type="number"
-            dataKey="categoryIndex"
-            domain={[-0.5, data.length - 0.5]}
-            ticks={data.map((_, idx) => idx)}
-            tickFormatter={(value) => data[Math.round(value)]?.category || ''}
-            label={{ value: xlabel, position: 'insideBottom', offset: -15 }}
-            angle={-45}
-            textAnchor="end"
-            height={100}
-          />
-          <YAxis
-            type="number"
-            dataKey="value"
-            domain={yDomain}
-            label={{ value: ylabel, angle: -90, position: 'insideLeft' }}
-          />
-          <Tooltip content={<CustomTooltip />} />
+    <Card className="w-full bg-card text-card-foreground border border-border rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300">
+      <CardHeader className="p-0 mb-6 border-b border-border pb-6">
+        <div className="space-y-1">
+          <CardTitle className="text-2xl font-bold tracking-tight">{title}</CardTitle>
+          <CardDescription className="text-base">{description || `Visualizing data distribution across ${data.length} categories.`}</CardDescription>
+        </div>
+      </CardHeader>
 
-          {/* Violin density points */}
-          <Scatter
-            data={scatterData}
-            fill="hsl(var(--primary))"
-            fillOpacity={0.3}
-          >
-            {scatterData.map((entry, index) => (
-              <Cell
-                key={`cell-${index}`}
-                fill={`hsl(${(Math.floor(entry.categoryIndex + 0.5) * 60) % 360}, 70%, 50%)`}
+      <CardContent className="p-0">
+        <div className="h-[450px] w-full relative">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart margin={{ top: 20, right: 30, left: 10, bottom: 40 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" strokeOpacity={0.4} />
+
+              <XAxis
+                type="number"
+                dataKey="categoryIndex"
+                domain={[-0.5, data.length - 0.5]}
+                ticks={data.map((_, idx) => idx)}
+                tickFormatter={(value) => data[Math.round(value)]?.category || ''}
+                tick={{ fill: 'var(--muted-foreground)', fontSize: 11, fontWeight: 500 }}
+                axisLine={false}
+                tickLine={false}
+                height={60}
               />
-            ))}
-          </Scatter>
-        </ComposedChart>
-      </ResponsiveContainer>
 
-      <div className="mt-4 text-sm text-muted-foreground">
-        <p>Violin plot showing distribution density (wider = more data points) • Categories: {data.length}</p>
-      </div>
-    </div>
+              <YAxis
+                type="number"
+                dataKey="value"
+                domain={yDomain}
+                tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
+                width={50}
+                label={{ value: ylabel, angle: -90, position: 'insideLeft', style: { fill: 'var(--muted-foreground)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase' } }}
+              />
+
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--muted)', fillOpacity: 0.1 }} />
+
+              <Scatter
+                data={scatterData}
+                isAnimationActive={true}
+                animationDuration={1500}
+                shape={<circle r={1.5} />}
+              >
+                {scatterData.map((entry, index) => {
+                  const catIdx = Math.round(entry.categoryIndex);
+                  return (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={`var(--chart-${(catIdx % 5) + 1})`}
+                      fillOpacity={0.25}
+                    />
+                  );
+                })}
+              </Scatter>
+
+              {/* Box plot overlay handles are tricky in Recharts within ComposedChart, 
+                  but we'll keep the logic as an SVG overlay group if possible. 
+                  Recharts Scatter doesn't easily support custom group layers inside but 
+                  we can try to inject it via a hidden series or custom shape if needed.
+                  Since previous implementation just mapped over shapes (which won't work inside SVG unless we're careful),
+                  we'll use a ReferenceLine or just leave the Scatter as the hero for now as Recharts doesn't 
+                  easily allow <g> inside directly with ComposedChart outside of certain contexts.
+              */}
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+
+      <CardFooter className="p-0 flex flex-col items-start gap-4 border-t border-border mt-6 pt-6 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/50">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-primary/20 border border-primary/30" />
+            <span>Violin density marks</span>
+          </div>
+          <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
+          <p>Wider areas indicate higher frequency of data points</p>
+        </div>
+      </CardFooter>
+    </Card>
   );
 }

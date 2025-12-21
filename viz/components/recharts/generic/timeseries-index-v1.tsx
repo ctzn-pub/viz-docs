@@ -1,17 +1,17 @@
 'use client'
 
 import React, { useState, useMemo } from 'react';
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer, 
-  ReferenceArea, 
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  ReferenceArea,
   Legend,
-  Brush 
+  Brush
 } from 'recharts';
 import { Button } from "@/viz/ui/button";
 import { Grid3X3 } from 'lucide-react';
@@ -75,10 +75,10 @@ interface SeriesComparisonProps {
 
 const TimeRangeButton: React.FC<TimeRangeButtonProps> = ({ active, onClick, children }) => (
   <Button
-    variant={active ? "default" : "ghost"}
+    variant={active ? "secondary" : "ghost"}
     size="sm"
     onClick={onClick}
-    className={`transition-all ${active ? 'bg-blue-500 text-white hover:bg-blue-600' : 'hover:bg-gray-100'}`}
+    className={`h-8 px-3 text-xs font-bold transition-all ${active ? 'shadow-sm bg-background border border-border' : 'text-muted-foreground hover:text-foreground'}`}
   >
     {children}
   </Button>
@@ -91,12 +91,9 @@ const IndexChart: React.FC<IndexChartProps> = ({ series1, series2 }) => {
   const { theme } = useTheme();
 
   const colors = {
-    series1: '#4299e1', // original blue
-    series2: '#f59e0b', // original amber
+    series1: 'var(--chart-1)',
+    series2: 'var(--chart-2)',
   };
-
-  console.log('series1:', series1);
-  console.log('series2:', series2);
 
   const recessionPeriods: RecessionPeriod[] = [
     { start: "1960-04-01", end: "1961-02-01" },
@@ -123,7 +120,6 @@ const IndexChart: React.FC<IndexChartProps> = ({ series1, series2 }) => {
 
     if (!series1Data?.length || !series2Data?.length) return [];
 
-    // Use the latest data point as reference (not today's date)
     const latestDate1 = new Date(series1Data[series1Data.length - 1].date);
     const latestDate2 = new Date(series2Data[series2Data.length - 1].date);
     const now = new Date(Math.min(+latestDate1, +latestDate2));
@@ -137,7 +133,7 @@ const IndexChart: React.FC<IndexChartProps> = ({ series1, series2 }) => {
     };
 
     startDate = ranges[timeRange]();
-    
+
     const filteredSeries1 = series1Data.filter(item => new Date(item.date) >= startDate);
     const filteredSeries2 = series2Data.filter(item => new Date(item.date) >= startDate);
 
@@ -187,22 +183,24 @@ const IndexChart: React.FC<IndexChartProps> = ({ series1, series2 }) => {
   const CustomTooltip: React.FC<TooltipProps> = ({ active, payload, label }) => {
     if (active && payload && payload.length && label) {
       return (
-        <div className="bg-background p-4 rounded-lg shadow-lg border border-border">
-          <p className="font-bold text-foreground">{formatDate(label)}</p>
-          {payload.map((entry) => {
-            const color = entry.dataKey === series1.title ? colors.series1 : colors.series2;
-            return (
-              <div key={entry.dataKey} className="mt-1">
-                <p className="text-sm text-muted-foreground flex items-center">
-                  <span className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: color }}></span>
-                  <span>{entry.dataKey}:</span>
-                  <span className="ml-1 font-medium" style={{ color }}>
-                    {entry.value.toFixed(2)}%
+        <div className="bg-popover/95 backdrop-blur-sm border border-border shadow-2xl rounded-xl p-4 min-w-[220px] animate-in fade-in zoom-in-95 duration-200">
+          <p className="font-bold text-foreground mb-3 pb-2 border-b border-border">{formatDate(label)}</p>
+          <div className="space-y-2">
+            {payload.map((entry) => {
+              const color = entry.dataKey === series1.title ? colors.series1 : colors.series2;
+              return (
+                <div key={entry.dataKey} className="flex justify-between items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }}></span>
+                    <span className="text-muted-foreground text-sm font-medium truncate max-w-[120px]">{entry.dataKey}:</span>
+                  </div>
+                  <span className="font-mono font-bold text-sm" style={{ color: color }}>
+                    {entry.value >= 0 ? '+' : ''}{entry.value.toFixed(2)}%
                   </span>
-                </p>
-              </div>
-            );
-          })}
+                </div>
+              );
+            })}
+          </div>
         </div>
       );
     }
@@ -210,153 +208,144 @@ const IndexChart: React.FC<IndexChartProps> = ({ series1, series2 }) => {
   };
 
   return (
-    <div className="w-full bg-background shadow-lg rounded-lg border">
-      <div className="pb-0 p-6">
-        <div className="flex flex-col md:flex-row justify-between items-start space-y-4 md:space-y-0 md:space-x-4">
-          <div>
-            <h3 className="text-2xl font-bold text-foreground">
-              Index Chart
-            </h3>
-            <div className="text-gray-600 text-sm mt-2">
-              {series1.title} vs {series2.title}
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2 items-center">
-            <div className="flex space-x-2">
-              {timeRanges.map((range) => (
-                <TimeRangeButton
-                  key={range}
-                  active={timeRange === range}
-                  onClick={() => setTimeRange(range)}
-                >
-                  {range}
-                </TimeRangeButton>
-              ))}
-            </div>
-          </div>
+    <div className="w-full bg-card text-card-foreground border border-border rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6 mb-6">
+        <div className="space-y-1">
+          <h3 className="text-xl font-bold tracking-tight inline-flex items-center gap-2">
+            <Grid3X3 className="text-primary w-5 h-5" /> Relative Performance Index
+          </h3>
+          <p className="text-sm text-muted-foreground">Cumulative % change from period start</p>
+        </div>
+        <div className="flex items-center bg-muted/50 p-1 rounded-lg border border-border self-start">
+          {timeRanges.map((range) => (
+            <TimeRangeButton
+              key={range}
+              active={timeRange === range}
+              onClick={() => setTimeRange(range)}
+            >
+              {range}
+            </TimeRangeButton>
+          ))}
         </div>
       </div>
-      <div className="p-6 pt-0">
-        <div className="h-[500px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={filteredData}
-              margin={{ top: 30, right: 30, left: 0, bottom: 20 }}
+
+      <div className="h-[500px] w-full relative">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={filteredData} margin={{ top: 20, right: 10, left: 0, bottom: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" strokeOpacity={0.4} />
+
+            <Legend
+              verticalAlign="top"
+              align="center"
+              height={40}
+              iconType="circle"
+              iconSize={8}
+              formatter={(value) => (
+                <span className="text-xs font-bold text-foreground/80 lowercase tracking-wider ml-1">{value}</span>
+              )}
+            />
+
+            <XAxis
+              dataKey="date"
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={formatDate}
+              tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
+              dy={10}
+              minTickGap={40}
+            />
+
+            <YAxis
+              domain={['auto', 'auto']}
+              axisLine={false}
+              tickLine={false}
+              width={60}
+              tickFormatter={(value) => `${value > 0 ? '+' : ''}${value.toFixed(0)}%`}
+              tick={{ fill: 'var(--muted-foreground)', fontSize: 11, fontWeight: 500 }}
+            />
+
+            <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--border)', strokeWidth: 1 }} />
+
+            {showRecessions && recessionPeriods.map((period, index) => (
+              <ReferenceArea
+                key={index}
+                x1={period.start}
+                x2={period.end}
+                fill="var(--muted)"
+                fillOpacity={0.12}
+                ifOverflow="visible"
+              />
+            ))}
+
+            <Line
+              type="monotone"
+              dataKey={series1.title}
+              stroke={colors.series1}
+              strokeWidth={3}
+              dot={false}
+              activeDot={{ r: 6, strokeWidth: 0, fill: colors.series1 }}
+              isAnimationActive={true}
+              animationDuration={1500}
+            />
+            <Line
+              type="monotone"
+              dataKey={series2.title}
+              stroke={colors.series2}
+              strokeWidth={3}
+              dot={false}
+              activeDot={{ r: 6, strokeWidth: 0, fill: colors.series2 }}
+              isAnimationActive={true}
+              animationDuration={1500}
+            />
+
+            <Brush
+              dataKey="date"
+              height={30}
+              stroke="var(--border)"
+              fill="var(--background)"
+              tickFormatter={formatDate}
+              onChange={handleBrushChange}
+              startIndex={brushDomain?.start}
+              endIndex={brushDomain?.end}
+              travellerWidth={8}
             >
-              <Legend 
-                verticalAlign="top"
-                align="left"
-                height={36}
-                iconType="circle"
-                wrapperStyle={{
-                  paddingBottom: '60px'
-                }}
-                formatter={(value) => (
-                  <span className="text-sm text-muted-foreground">{value}</span>
-                )}
-              />
-              <CartesianGrid
-                strokeDasharray="3 3"
-                className="stroke-muted"
-                vertical={false}
-              />
-              <XAxis
-                dataKey="date"
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={formatDate}
-                tick={{ fill: theme === 'dark' ? '#9CA3AF' : '#6B7280', fontSize: 12 }}
-                dy={10}
-                minTickGap={5}
-                interval="preserveStartEnd"
-              />
-              <YAxis
-                domain={['auto', 'auto']}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={(value) => `${value}%`}
-                tick={{ fill: theme === 'dark' ? '#9CA3AF' : '#6B7280', fontSize: 12 }}
-                width={60}
-                dx={-10}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              {showRecessions && recessionPeriods.map((period, index) => (
-                <ReferenceArea
-                  key={index}
-                  x1={period.start}
-                  x2={period.end}
-                  className="fill-muted"
-                  fillOpacity={0.4}
-                  alwaysShow={true}
-                  ifOverflow="visible"
-                />
-              ))}
-              <Line
-                type="monotone"
-                dataKey={series1.title}
-                stroke={colors.series1}
-                strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 6, fill: colors.series1 }}
-              />
-              <Line
-                type="monotone"
-                dataKey={series2.title}
-                stroke={colors.series2}
-                strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 6, fill: colors.series2 }}
-              />
-              <Brush
-                dataKey="date"
-                height={40}
-                stroke="#8884d8"
-                tickFormatter={formatDate}
-                onChange={handleBrushChange}
-                startIndex={brushDomain?.start}
-                endIndex={brushDomain?.end}
-              >
-                <LineChart>
-                  <Line
-                    type="monotone"
-                    dataKey={series1.title}
-                    stroke={colors.series1}
-                    strokeWidth={1}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey={series2.title}
-                    stroke={colors.series2}
-                    strokeWidth={1}
-                    dot={false}
-                  />
-                </LineChart>
-              </Brush>
-            </LineChart>
-          </ResponsiveContainer>
+              <LineChart>
+                <Line type="monotone" dataKey={series1.title} stroke={colors.series1} strokeWidth={1} dot={false} />
+                <Line type="monotone" dataKey={series2.title} stroke={colors.series2} strokeWidth={1} dot={false} />
+              </LineChart>
+            </Brush>
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="mt-8 flex items-center gap-4 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/50 border-t border-border pt-6">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-2 bg-muted/40 rounded-sm" />
+          <span>Shaded periods indicate US recessions</span>
+        </div>
+        <div className="ml-auto">
+          Base period re-indexed to zero at start
         </div>
       </div>
     </div>
   );
 };
 
-const SeriesComparison: React.FC<SeriesComparisonProps> = ({ 
-  series1, 
-  series2, 
+const SeriesComparison: React.FC<SeriesComparisonProps> = ({
+  series1,
+  series2,
   title = "Series Comparison",
-  description 
+  description
 }) => {
   return (
-    <div className="w-full max-w-7xl mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-4">{title}</h2>
+    <div className="w-full space-y-4">
       <IndexChart
         series1={series1}
         series2={series2}
       />
       {description && (
-        <div className="mt-4 text-sm text-gray-600">
-          <p>{description}</p>
+        <div className="px-4 py-3 bg-muted/20 border border-border/50 rounded-xl">
+          <p className="text-sm text-muted-foreground leading-relaxed italic">{description}</p>
         </div>
       )}
     </div>

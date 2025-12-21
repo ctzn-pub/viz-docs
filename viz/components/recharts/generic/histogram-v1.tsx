@@ -66,7 +66,7 @@ export default function HistogramRecharts({
   xlabel = 'Value',
   ylabel = 'Frequency',
   title,
-  color = 'hsl(var(--primary))',
+  color = 'var(--chart-1)',
   showMean = true,
   showMedian = false
 }: HistogramProps) {
@@ -95,12 +95,16 @@ export default function HistogramRecharts({
     if (active && payload && payload.length) {
       const d = payload[0].payload;
       return (
-        <div className="bg-white dark:bg-gray-800 p-3 border rounded shadow-lg">
-          <p className="font-semibold">{d.bin}</p>
-          <p className="text-sm">Count: {d.count}</p>
-          <p className="text-xs text-muted-foreground">
-            Range: [{d.binStart.toFixed(2)}, {d.binEnd.toFixed(2)})
-          </p>
+        <div className="bg-popover/95 backdrop-blur-sm border border-border shadow-2xl rounded-xl p-4 min-w-[200px] animate-in fade-in zoom-in-95 duration-200">
+          <p className="font-semibold text-foreground mb-2 text-sm">{d.bin}</p>
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-muted-foreground text-sm">Count</span>
+            <span className="font-mono font-medium text-foreground">{d.count}</span>
+          </div>
+          <div className="mt-2 pt-2 border-t border-border/50 text-xs text-muted-foreground/70 flex justify-between gap-2">
+            <span>Range</span>
+            <span className="font-mono">[{d.binStart.toFixed(2)}, {d.binEnd.toFixed(2)})</span>
+          </div>
         </div>
       );
     }
@@ -109,58 +113,102 @@ export default function HistogramRecharts({
 
   if (numericData.length === 0) {
     return (
-      <div className="w-full p-4 text-center text-muted-foreground">
-        No valid numeric data found for field: {valueField}
+      <div className="border border-dashed border-border rounded-xl p-12 text-center bg-card/50">
+        <p className="text-muted-foreground">No valid numeric data found for field: {valueField}</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full">
-      {title && <h3 className="text-lg font-semibold mb-4">{title}</h3>}
-      <ResponsiveContainer width={width || '100%'} height={height}>
-        <BarChart data={histogramData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis
-            dataKey="bin"
-            label={{ value: xlabel, position: 'insideBottom', offset: -10 }}
-            angle={-45}
-            textAnchor="end"
-            height={80}
-          />
-          <YAxis label={{ value: ylabel, angle: -90, position: 'insideLeft' }} />
-          <Tooltip content={<CustomTooltip />} />
-          <Legend />
-          <Bar dataKey="count" fill={color} name="Frequency" />
-
-          {showMean && (
-            <ReferenceLine
-              x={histogramData.find(d =>
-                d.binStart <= statistics.mean && d.binEnd > statistics.mean
-              )?.bin}
-              stroke="hsl(var(--destructive))"
-              strokeWidth={2}
-              strokeDasharray="5 5"
-              label={{ value: `Mean: ${statistics.mean.toFixed(2)}`, position: 'top', fill: 'hsl(var(--destructive))' }}
+    <div className="w-full bg-card text-card-foreground border border-border rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300">
+      {title && (
+        <div className="mb-6 border-b border-border pb-4">
+          <h3 className="text-xl font-bold tracking-tight">{title}</h3>
+        </div>
+      )}
+      <div className="w-full h-[500px]">
+        <ResponsiveContainer width={width || '100%'} height="100%">
+          <BarChart data={histogramData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }} barSize={50}>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              stroke="var(--border)"
+              strokeOpacity={0.4}
             />
-          )}
-
-          {showMedian && (
-            <ReferenceLine
-              x={histogramData.find(d =>
-                d.binStart <= statistics.median && d.binEnd > statistics.median
-              )?.bin}
-              stroke="hsl(var(--chart-2))"
-              strokeWidth={2}
-              strokeDasharray="5 5"
-              label={{ value: `Median: ${statistics.median.toFixed(2)}`, position: 'bottom', fill: 'hsl(var(--chart-2))' }}
+            <XAxis
+              dataKey="bin"
+              label={{
+                value: xlabel,
+                position: 'insideBottom',
+                offset: -15,
+                fill: 'var(--muted-foreground)',
+                fontSize: 12
+              }}
+              angle={-45}
+              textAnchor="end"
+              height={80}
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
             />
-          )}
-        </BarChart>
-      </ResponsiveContainer>
+            <YAxis
+              label={{
+                value: ylabel,
+                angle: -90,
+                position: 'insideLeft',
+                fill: 'var(--muted-foreground)',
+                fontSize: 12,
+                style: { textAnchor: 'middle' }
+              }}
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--muted)/0.5' }} />
+            <Legend wrapperStyle={{ paddingTop: '20px' }} />
+            <Bar
+              dataKey="count"
+              fill={color}
+              name="Frequency"
+              radius={[6, 6, 0, 0]}
+              isAnimationActive={true}
+              animationDuration={1500}
+            />
 
-      <div className="mt-4 text-sm text-muted-foreground">
-        <p>Total observations: {numericData.length} • Bins: {histogramData.length} • Mean: {statistics.mean.toFixed(2)} • Median: {statistics.median.toFixed(2)}</p>
+            {showMean && (
+              <ReferenceLine
+                x={histogramData.find(d =>
+                  d.binStart <= statistics.mean && d.binEnd > statistics.mean
+                )?.bin}
+                stroke="var(--destructive)"
+                strokeWidth={2}
+                strokeDasharray="5 5"
+                label={{ value: `Mean: ${statistics.mean.toFixed(2)}`, position: 'top', fill: 'var(--destructive)', fontSize: 12, fontWeight: 500 }}
+              />
+            )}
+
+            {showMedian && (
+              <ReferenceLine
+                x={histogramData.find(d =>
+                  d.binStart <= statistics.median && d.binEnd > statistics.median
+                )?.bin}
+                stroke="var(--chart-2)"
+                strokeWidth={2}
+                strokeDasharray="5 5"
+                label={{ value: `Median: ${statistics.median.toFixed(2)}`, position: 'bottom', fill: 'var(--chart-2)', fontSize: 12, fontWeight: 500 }}
+              />
+            )}
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground bg-muted/30 px-4 py-2 rounded-lg border border-border/50">
+        <span>Total observations: <span className="font-mono text-foreground">{numericData.length}</span></span>
+        <div className="flex gap-4">
+          <span>Bins: <span className="font-mono text-foreground">{histogramData.length}</span></span>
+          <span>Mean: <span className="font-mono text-foreground">{statistics.mean.toFixed(2)}</span></span>
+          <span>Median: <span className="font-mono text-foreground">{statistics.median.toFixed(2)}</span></span>
+        </div>
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ import {
     YAxis,
     Tooltip,
     ErrorBar,
+    ResponsiveContainer,
 } from 'recharts';
 import {
     Users,
@@ -133,100 +134,157 @@ export default function DemographicDotPlot({
         }
     }, [data, activeTab]);
 
+    // Map categories to theme colors
+    const getThemeColor = (index: number) => {
+        const colors = [
+            'var(--chart-1)',
+            'var(--chart-2)',
+            'var(--chart-3)',
+            'var(--chart-4)',
+            'var(--chart-5)',
+        ];
+        return colors[index % colors.length];
+    };
+
+    const CustomTooltip = ({ active, payload, label }: any) => {
+        if (!active || !payload || !payload.length) return null;
+        const dataPoint = payload[0].payload;
+
+        return (
+            <div className="bg-popover/95 backdrop-blur-sm border border-border shadow-2xl rounded-xl p-4 min-w-[200px] animate-in fade-in zoom-in-95 duration-200">
+                <p className="font-semibold text-foreground mb-2 text-sm">{dataPoint.break_out}</p>
+                <div className="flex items-center justify-between gap-4">
+                    <span className="text-muted-foreground text-sm">Value</span>
+                    <span className="font-mono font-medium text-foreground">
+                        {dataPoint.value?.toFixed(1)}%
+                    </span>
+                </div>
+                <div className="mt-2 pt-2 border-t border-border/50 text-xs text-muted-foreground">
+                    <div className="flex justify-between gap-2">
+                        <span>95% CI</span>
+                        <span className="font-mono">
+                            [{dataPoint.confidence_limit_low?.toFixed(1)}, {dataPoint.confidence_limit_high?.toFixed(1)}]
+                        </span>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     if (demographicCategories.length === 0) {
         return (
-            <div className="border rounded-lg p-6">
-                <div>
-                    <p className="text-gray-600">No demographic data available</p>
-                </div>
+            <div className="border border-dashed border-border rounded-xl p-12 text-center bg-card/50">
+                <p className="text-muted-foreground">No demographic data available to display.</p>
             </div>
         );
     }
 
+    const activeCategoryIndex = demographicCategories.findIndex(c => c.key === activeTab);
+    const currentColor = getThemeColor(activeCategoryIndex >= 0 ? activeCategoryIndex : 0);
+
     return (
-        <div className="border rounded-lg p-6">
-            <div className="mb-4">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <Users className="w-5 h-5" />
-                    Demographic Dot Plot with Error Bars
+        <div className="w-full bg-card text-card-foreground border border-border rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300">
+            <div className="mb-6 flex items-center gap-3 border-b border-border pb-4">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                    <Users className="w-5 h-5 text-primary" />
+                </div>
+                <h3 className="text-lg font-bold tracking-tight">
+                    Demographic Distribution (Dot Plot)
                 </h3>
             </div>
-            <div>
-                <Tabs value={activeTab || undefined} onValueChange={setActiveTab}>
-                    <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${demographicCategories.length}, 1fr)` }}>
-                        {demographicCategories.map((category) => {
-                            const Icon = category.icon;
-                            return (
-                                <TabsTrigger key={category.key} value={category.key}>
-                                    <Icon className={`w-4 h-4 mr-2 ${category.color}`} />
-                                    {category.key}
-                                </TabsTrigger>
-                            );
-                        })}
-                    </TabsList>
 
-                    {demographicCategories.map((category) => (
-                        <TabsContent key={category.key} value={category.key} className="space-y-4">
-                            <div className="flex justify-center mt-4">
+            <Tabs value={activeTab || undefined} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="mb-6 w-full h-auto flex-wrap justify-start gap-1 bg-muted/50 p-1">
+                    {demographicCategories.map((category) => {
+                        const Icon = category.icon;
+                        return (
+                            <TabsTrigger
+                                key={category.key}
+                                value={category.key}
+                                className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all"
+                            >
+                                <Icon className="w-4 h-4 opacity-70" />
+                                {category.key}
+                            </TabsTrigger>
+                        );
+                    })}
+                </TabsList>
+
+                {demographicCategories.map((category) => (
+                    <TabsContent key={category.key} value={category.key} className="space-y-4 animate-in fade-in duration-300 slide-in-from-left-2">
+                        <div className="w-full h-[450px] mt-4">
+                            <ResponsiveContainer width="100%" height="100%">
                                 <ScatterChart
-                                    width={600}
-                                    height={400}
                                     data={category.data}
-                                    margin={{ top: 20, right: 30, left: 20, bottom: 25 }}
-                                    className="w-full h-full"
+                                    margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
                                 >
-                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <CartesianGrid
+                                        strokeDasharray="3 3"
+                                        vertical={false}
+                                        stroke="var(--border)"
+                                        strokeOpacity={0.4}
+                                    />
                                     <XAxis
                                         dataKey="break_out"
-                                        label={{
-                                            value: category.data[0]?.break_out_category || '',
-                                            position: 'insideBottom',
-                                            offset: -10,
-                                        }}
-                                        interval={0}
+                                        axisLine={false}
+                                        tickLine={false}
                                         tick={{
-                                            fill: 'hsl(var(--foreground))',
-                                            fontSize: 10,
+                                            fill: 'var(--muted-foreground)',
+                                            fontSize: 11,
                                             textAnchor: 'end',
-                                            dy: 10,
                                         }}
+                                        angle={-45}
+                                        textAnchor="end"
                                         height={80}
+                                        interval={0}
                                         padding={{ left: 30, right: 30 }}
                                     />
                                     <YAxis
+                                        dataKey="value"
                                         label={{
                                             value: ylabel,
                                             angle: -90,
                                             position: 'insideLeft',
                                             offset: 0,
-                                            style: { textAnchor: 'middle' },
+                                            style: {
+                                                textAnchor: 'middle',
+                                                fill: 'var(--muted-foreground)',
+                                                fontSize: 12,
+                                                fontWeight: 500
+                                            },
                                         }}
-                                        tick={{ fill: 'hsl(var(--foreground))' }}
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
                                     />
-                                    <Tooltip
-                                        contentStyle={{
-                                            backgroundColor: 'hsl(var(--background))',
-                                            border: '1px solid hsl(var(--border))',
-                                        }}
-                                    />
-                                    <Scatter dataKey="value" fill='hsl(var(--foreground))' isAnimationActive={false}>
+                                    <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }} />
+                                    <Scatter
+                                        name={category.key}
+                                        data={category.data}
+                                        fill={currentColor}
+                                        isAnimationActive={true}
+                                        animationDuration={1000}
+                                    >
                                         <ErrorBar
                                             dataKey="error"
                                             width={4}
-                                            strokeWidth={2}
-                                            stroke="grey"
+                                            strokeWidth={1.5}
+                                            stroke="var(--foreground)"
+                                            strokeOpacity={0.4}
                                         />
                                     </Scatter>
                                 </ScatterChart>
-                            </div>
+                            </ResponsiveContainer>
+                        </div>
 
-                            <p className="text-sm text-gray-600 text-center">
-                                Error bars represent 95% confidence intervals
+                        <div className="flex justify-center">
+                            <p className="text-xs text-muted-foreground bg-muted/30 px-3 py-1 rounded-full border border-border/50">
+                                Note: Error bars represent 95% confidence intervals
                             </p>
-                        </TabsContent>
-                    ))}
-                </Tabs>
-            </div>
+                        </div>
+                    </TabsContent>
+                ))}
+            </Tabs>
         </div>
     );
 }

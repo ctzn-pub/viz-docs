@@ -10,6 +10,8 @@ import {
     Tooltip,
     ErrorBar,
 } from 'recharts';
+import { ResponsiveContainer } from 'recharts';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Users,
     GraduationCap,
@@ -33,6 +35,8 @@ interface DataPoint {
 interface DemographicLineChartProps {
     data: Record<string, any>;
     ylabel?: string;
+    title?: string;
+    description?: string;
 }
 
 const domains = {
@@ -67,16 +71,16 @@ interface CategoryInfo {
 }
 
 const categoryReference: Record<string, CategoryInfo> = {
-    'Age Group': { icon: Users, color: 'text-blue-500' },
-    'Education Attained': { icon: GraduationCap, color: 'text-green-500' },
-    Gender: { icon: UserCircle2, color: 'text-purple-500' },
-    'Household Income': { icon: DollarSign, color: 'text-yellow-500' },
-    'Race/Ethnicity': { icon: Palette, color: 'text-red-500' },
+    'Age Group': { icon: Users, color: 'var(--chart-1)' },
+    'Education Attained': { icon: GraduationCap, color: 'var(--chart-2)' },
+    Gender: { icon: UserCircle2, color: 'var(--chart-3)' },
+    'Household Income': { icon: DollarSign, color: 'var(--chart-4)' },
+    'Race/Ethnicity': { icon: Palette, color: 'var(--chart-5)' },
 };
 
 const defaultCategoryInfo: CategoryInfo = {
     icon: Users,
-    color: 'text-gray-500',
+    color: 'var(--muted-foreground)',
 };
 
 function getCategoryInfo(category: string): CategoryInfo {
@@ -91,6 +95,8 @@ interface DemographicCategory extends CategoryInfo {
 export default function DemographicLineChart({
     data,
     ylabel = 'Value (%)',
+    title = "Demographic Trends",
+    description = "Analyzing values across different population segments."
 }: DemographicLineChartProps) {
     const [activeTab, setActiveTab] = useState<string | null>(null);
     const [demographicCategories, setDemographicCategories] = useState<DemographicCategory[]>([]);
@@ -135,30 +141,57 @@ export default function DemographicLineChart({
 
     if (demographicCategories.length === 0) {
         return (
-            <div className="border rounded-lg p-6">
-                <div>
-                    <p className="text-gray-600">No demographic data available</p>
-                </div>
-            </div>
+            <Card className="border-dashed">
+                <CardContent className="py-12 text-center text-muted-foreground">
+                    No demographic data available
+                </CardContent>
+            </Card>
         );
     }
 
+    const CustomTooltip = ({ active, payload }: any) => {
+        if (active && payload && payload.length) {
+            const d = payload[0].payload;
+            return (
+                <div className="bg-popover/95 backdrop-blur-sm border border-border shadow-2xl rounded-xl p-4 min-w-[200px] animate-in fade-in zoom-in-95 duration-200">
+                    <div className="font-bold text-foreground mb-2 pb-2 border-b border-border">{d.break_out}</div>
+                    <div className="space-y-1.5 text-sm">
+                        <div className="flex justify-between items-center gap-4">
+                            <span className="text-muted-foreground font-medium">Value:</span>
+                            <span className="font-mono font-bold text-primary">{d.value.toFixed(1)}%</span>
+                        </div>
+                        <div className="flex justify-between items-center gap-4">
+                            <span className="text-muted-foreground font-medium">95% CI:</span>
+                            <span className="font-mono text-xs">[{d.confidence_limit_low.toFixed(1)}, {d.confidence_limit_high.toFixed(1)}]%</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        return null;
+    };
+
     return (
-        <div className="border rounded-lg p-6">
-            <div className="mb-4">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <Users className="w-5 h-5" />
-                    Demographic Line Chart with Error Bars
-                </h3>
-            </div>
-            <div>
-                <Tabs value={activeTab || undefined} onValueChange={setActiveTab}>
-                    <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${demographicCategories.length}, 1fr)` }}>
+        <Card className="w-full bg-card text-card-foreground border border-border rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300">
+            <CardHeader className="p-0 border-b border-border pb-6 mb-6">
+                <div className="space-y-1">
+                    <CardTitle className="text-2xl font-bold tracking-tight">{title}</CardTitle>
+                    <CardDescription className="text-base">{description}</CardDescription>
+                </div>
+            </CardHeader>
+
+            <CardContent className="p-0">
+                <Tabs value={activeTab || undefined} onValueChange={setActiveTab} className="w-full">
+                    <TabsList className="flex flex-wrap h-auto gap-1 bg-muted/30 p-1 border border-border/50 rounded-xl mb-6">
                         {demographicCategories.map((category) => {
                             const Icon = category.icon;
                             return (
-                                <TabsTrigger key={category.key} value={category.key}>
-                                    <Icon className={`w-4 h-4 mr-2 ${category.color}`} />
+                                <TabsTrigger
+                                    key={category.key}
+                                    value={category.key}
+                                    className="flex-1 min-w-[120px] data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border-border border border-transparent transition-all py-2 font-bold text-xs uppercase tracking-wider"
+                                >
+                                    <Icon className="w-3.5 h-3.5 mr-2 opacity-70" style={{ color: activeTab === category.key ? category.color : 'inherit' }} />
                                     {category.key}
                                 </TabsTrigger>
                             );
@@ -166,72 +199,68 @@ export default function DemographicLineChart({
                     </TabsList>
 
                     {demographicCategories.map((category) => (
-                        <TabsContent key={category.key} value={category.key} className="space-y-4">
-                            <div className="flex justify-center mt-4">
-                                <LineChart
-                                    width={600}
-                                    height={400}
-                                    data={category.data}
-                                    margin={{ top: 20, right: 30, left: 20, bottom: 25 }}
-                                    className="w-full h-full"
-                                >
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis
-                                        dataKey="break_out"
-                                        label={{
-                                            value: category.data[0]?.break_out_category || '',
-                                            position: 'insideBottom',
-                                            offset: -10,
-                                        }}
-                                        interval={0}
-                                        tick={{
-                                            fill: 'hsl(var(--foreground))',
-                                            fontSize: 10,
-                                            textAnchor: 'end',
-                                            dy: 10,
-                                        }}
-                                        height={80}
-                                        padding={{ left: 30, right: 30 }}
-                                    />
-                                    <YAxis
-                                        label={{
-                                            value: ylabel,
-                                            angle: -90,
-                                            position: 'insideLeft',
-                                            offset: 0,
-                                            style: { textAnchor: 'middle' },
-                                        }}
-                                        tick={{ fill: 'hsl(var(--foreground))' }}
-                                    />
-                                    <Tooltip
-                                        contentStyle={{
-                                            backgroundColor: 'hsl(var(--background))',
-                                            border: '1px solid hsl(var(--border))',
-                                        }}
-                                    />
-                                    <Line
-                                        dataKey="value"
-                                        stroke='hsl(var(--foreground))'
-                                        isAnimationActive={false}
-                                        dot={true}
+                        <TabsContent key={category.key} value={category.key} className="space-y-4 focus-visible:outline-none">
+                            <div className="h-[400px] w-full relative">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart
+                                        data={category.data}
+                                        margin={{ top: 20, right: 30, left: 10, bottom: 20 }}
                                     >
-                                        <ErrorBar
-                                            dataKey="error"
-                                            width={4}
-                                            strokeWidth={2}
-                                            stroke="grey"
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" strokeOpacity={0.4} />
+                                        <XAxis
+                                            dataKey="break_out"
+                                            axisLine={false}
+                                            tickLine={false}
+                                            interval={0}
+                                            tick={{
+                                                fill: 'var(--muted-foreground)',
+                                                fontSize: 10,
+                                                fontWeight: 600
+                                            }}
+                                            height={50}
                                         />
-                                    </Line>
-                                </LineChart>
+                                        <YAxis
+                                            axisLine={false}
+                                            tickLine={false}
+                                            tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
+                                            width={50}
+                                            label={{
+                                                value: ylabel,
+                                                angle: -90,
+                                                position: 'insideLeft',
+                                                style: { fill: 'var(--muted-foreground)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase' }
+                                            }}
+                                        />
+                                        <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--border)', strokeWidth: 1 }} />
+                                        <Line
+                                            dataKey="value"
+                                            stroke={category.color}
+                                            strokeWidth={3}
+                                            dot={{ r: 4, fill: category.color, strokeWidth: 2, stroke: 'var(--background)' }}
+                                            activeDot={{ r: 6, strokeWidth: 0, fill: category.color }}
+                                            isAnimationActive={true}
+                                            animationDuration={1000}
+                                        >
+                                            <ErrorBar
+                                                dataKey="error"
+                                                width={6}
+                                                strokeWidth={2}
+                                                stroke="var(--muted-foreground)"
+                                                strokeOpacity={0.5}
+                                            />
+                                        </Line>
+                                    </LineChart>
+                                </ResponsiveContainer>
                             </div>
-
-                            <p className="text-sm text-gray-600 text-center">
-                                Error bars represent 95% confidence intervals
-                            </p>
                         </TabsContent>
                     ))}
                 </Tabs>
-            </div>
-        </div>
+            </CardContent>
+
+            <CardFooter className="p-0 flex items-center gap-2 border-t border-border mt-6 pt-6 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/50">
+                <div className="w-3 h-0.5 bg-muted-foreground/30" />
+                <span>Error bars represent 95% confidence intervals</span>
+            </CardFooter>
+        </Card>
     );
 }

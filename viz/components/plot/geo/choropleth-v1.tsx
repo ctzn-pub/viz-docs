@@ -3,6 +3,10 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import * as Plot from "@observablehq/plot";
 import * as topojson from "topojson-client";
+import { useTheme } from 'next-themes';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/viz/ui/tabs";
+import { LayoutDashboard, Map as MapIcon, Target } from 'lucide-react';
 
 const TOPOLOGY_BASE_URL = 'https://ontopic-public-data.t3.storage.dev/geo';
 
@@ -22,15 +26,18 @@ interface ChoroplethMapProps {
 
 const ChoroplethMap: React.FC<ChoroplethMapProps> = ({
   data = [],
-  title = "US County Mental Health Prevalence",
-  subtitle = "County-level mental health data from CDC",
-  valueLabel = "Mental Health (% Poor Mental Health Days)",
-  colorScheme = "blues"
+  title = "US County Health Prevalence",
+  subtitle = "County-level health data from CDC Behavioral Risk Factor Surveillance System",
+  valueLabel = "Health Metric (%)",
+  colorScheme = "magma"
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
+  const highlightMapRef = useRef<HTMLDivElement>(null);
   const [countyData, setCountyData] = useState<CountyDataPoint[]>([]);
   const [us, setUs] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("standard");
+  const { theme } = useTheme();
 
   // Fetch topology data
   useEffect(() => {
@@ -63,182 +70,235 @@ const ChoroplethMap: React.FC<ChoroplethMapProps> = ({
     }
   }, [data]);
 
-  useEffect(() => {
-    if (loading || !countyData || countyData.length === 0 || !us) return;
-    if (!mapRef.current) return;
+  const thresholds = useMemo(() => {
+    if (!countyData.length) return { p80: 0, p90: 0 };
+    const values = countyData.map(d => d.MHLTH_AdjPrev).sort((a, b) => a - b);
+    return {
+      p80: values[Math.floor(values.length * 0.8)],
+      p90: values[Math.floor(values.length * 0.9)]
+    };
+  }, [countyData]);
 
-    // Clear existing plot
-    mapRef.current.innerHTML = '';
+  const renderMap = (container: HTMLDivElement | null, type: 'standard' | 'highlight') => {
+    if (loading || !countyData.length || !us || !container) return;
+
+    container.innerHTML = '';
 
     try {
-      // Extract topojson features
-      const statemesh = topojson.mesh(us as any, (us as any).objects.states, (a: any, b: any) => a !== b);
-      const nation = topojson.feature(us as any, (us as any).objects.nation);
-      const countiesmesh = topojson.mesh(us as any, (us as any).objects.counties);
-      const counties = topojson.feature(us as any, (us as any).objects.counties);
+      const statemesh = topojson.mesh(us, us.objects.states, (a: any, b: any) => a !== b);
+      const nation = topojson.feature(us, us.objects.nation);
+      const counties = topojson.feature(us, us.objects.counties);
 
-      // Create data map for quick lookup using FIPS codes
       const dataMap = new Map(countyData.map(d => [d.FIPS, d.MHLTH_AdjPrev]));
       const populationMap = new Map(countyData.map(d => [d.FIPS, d.population]));
 
-      console.log(`Loaded ${countyData.length} counties, data map has ${dataMap.size} entries`);
+      const isDark = theme === 'dark';
 
-      // Color scale configuration
-      const colorConfig = {
-        type: "quantile" as const,
-        n: 7,
-        scheme: colorScheme,
-        legend: true,
-        label: valueLabel,
-        tickFormat: ".1f"
-      };
+      const colorConfig: any = type === 'standard'
+        ? {
+          type: "quantile" as const,
+          n: 8,
+          scheme: colorScheme as any,
+          reverse: true,
+          legend: true,
+          label: valueLabel,
+          tickFormat: ".1f"
+        }
+        : {
+          type: "threshold" as const,
+          domain: [thresholds.p80, thresholds.p90],
+          range: [
+            isDark ? "#1e293b" : "#f1f5f9", // Bottom 80% (Neutral)
+            isDark ? "#3b82f6" : "#93c5fd", // Top 20-10% (Lighter)
+            isDark ? "#1d4ed8" : "#1e40af"  // Top 10% (Darker)
+          ],
+          legend: true,
+          label: `Segment (Highlighting Top 20%)`,
+          tickFormat: (d: number) => {
+            if (d === thresholds.p80) return "Top 20%";
+            if (d === thresholds.p90) return "Top 10%";
+            return "";
+          }
+        };
 
       const plot = Plot.plot({
-        title: title,
-        subtitle: subtitle,
-        width: 960,
+        width: 1000,
         height: 600,
         projection: "albers",
         style: {
-          backgroundColor: "white",
-          fontFamily: "sans-serif",
+          backgroundColor: "transparent",
+          color: "currentColor",
+          fontFamily: "Inter, sans-serif",
+          padding: "20px"
         },
         color: colorConfig,
         marks: [
-          // County boundaries (light stroke)
-          Plot.geo(countiesmesh, {
-            strokeOpacity: 0.3,
-            stroke: "#ddd"
+          // Background fill for areas without data
+          Plot.geo((counties as any).features, {
+            fill: isDark ? "#0f172a" : "#f8fafc",
+            stroke: isDark ? "#1e293b" : "#e2e8f0",
+            strokeWidth: 0.2
           }),
 
-          // Counties with data (choropleth fill)
-          Plot.geo(counties.features, {
+          // Main data layer
+          Plot.geo((counties as any).features, {
             fill: (d: any) => {
-              const value = dataMap.get(d.id);
-              return value !== undefined ? value : null;
+              const val = dataMap.get(d.id);
+              return val !== undefined ? val : null;
             },
-            stroke: "white",
+            stroke: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
             strokeWidth: 0.5,
             tip: true,
             title: (d: any) => {
-              const countyName = d.properties?.name || `County ${d.id}`;
-              const value = dataMap.get(d.id);
-              const population = populationMap.get(d.id);
-              if (value !== undefined) {
-                const popText = population ? `\nPopulation: ${population.toLocaleString()}` : '';
-                return `${countyName}\n${valueLabel}: ${value.toFixed(1)}%${popText}`;
+              const name = d.properties?.name || `County ${d.id}`;
+              const val = dataMap.get(d.id);
+              const pop = populationMap.get(d.id);
+              if (val === undefined) return `${name}\nNo data`;
+
+              let segment = "";
+              if (type === 'highlight') {
+                if (val >= thresholds.p90) segment = " (Top 10% Overall)";
+                else if (val >= thresholds.p80) segment = " (Top 20% Overall)";
               }
-              return `${countyName}\nNo data available`;
+
+              return `${name}${segment}\n${valueLabel}: ${val.toFixed(1)}%\nPopulation: ${pop?.toLocaleString() || 'N/A'}`;
             }
           }),
 
-          // Nation outline
-          Plot.geo(nation, {
-            stroke: "black",
-            strokeWidth: 1,
-            fill: "none"
+          // State boundaries
+          Plot.geo(statemesh, {
+            stroke: isDark ? "white" : "black",
+            strokeOpacity: 0.3,
+            strokeWidth: 1
           }),
 
-          // State boundaries (stronger stroke)
-          Plot.geo(statemesh, {
-            stroke: "black",
-            strokeOpacity: 0.5,
-            strokeWidth: 0.5
+          // Outer boundary
+          Plot.geo(nation, {
+            stroke: isDark ? "white" : "black",
+            strokeWidth: 1.5,
+            fill: "none"
           })
         ],
         marginLeft: 0,
-        marginRight: 140 // Space for legend
+        marginRight: 0,
+        marginTop: 20,
+        marginBottom: 20
       });
 
-      mapRef.current.appendChild(plot);
-
-      // Cleanup
-      return () => {
-        plot?.remove();
-      };
-    } catch (error) {
-      console.error('Error rendering choropleth map:', error);
-      if (mapRef.current) {
-        mapRef.current.innerHTML = `<div class="text-red-500 p-4">Error loading map: ${error}</div>`;
-      }
+      container.appendChild(plot);
+      return () => plot.remove();
+    } catch (err) {
+      console.error(err);
     }
-  }, [countyData, loading, title, subtitle, valueLabel, colorScheme, us]);
+  };
+
+  useEffect(() => {
+    if (activeTab === 'standard') renderMap(mapRef.current, 'standard');
+    else renderMap(highlightMapRef.current, 'highlight');
+  }, [countyData, us, activeTab, theme, colorScheme]);
 
   if (loading || !us) {
     return (
-      <div className="space-y-6">
-        <div className="mb-6">
-          <p className="text-gray-600">Loading county health data...</p>
+      <Card className="w-full h-[700px] flex items-center justify-center border-dashed border-2">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <p className="text-muted-foreground font-medium animate-pulse">Assembling geographic data...</p>
         </div>
-        <div>
-          <div className="flex justify-center items-center" style={{ minHeight: '600px' }}>
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-          </div>
-        </div>
-      </div>
+      </Card>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="mb-6">
-        <p className="text-gray-600">
-          Interactive county-level choropleth map showing mental health prevalence across US counties.
-          Colors represent different prevalence ranges using quantile scaling for optimal contrast.
-          Data source: CDC Behavioral Risk Factor Surveillance System (BRFSS).
+    <Card className="w-full bg-card text-card-foreground border border-border rounded-xl shadow-sm transition-all duration-300">
+      <CardHeader className="border-b border-border pb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <CardTitle className="text-2xl font-bold tracking-tight inline-flex items-center gap-2">
+              <MapIcon className="text-primary w-6 h-6" /> {title}
+            </CardTitle>
+            <CardDescription className="text-base max-w-2xl">{subtitle}</CardDescription>
+          </div>
+          <div className="flex items-center gap-2 bg-muted/30 p-1.5 rounded-xl border border-border/50">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-background border border-border rounded-lg shadow-sm">
+              <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+              <span className="text-xs font-bold uppercase tracking-widest">{countyData.length} Counties</span>
+            </div>
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="p-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2 mb-8 bg-muted/50 p-1 rounded-xl">
+            <TabsTrigger value="standard" className="rounded-lg font-bold text-xs uppercase tracking-wider py-2">
+              <LayoutDashboard className="w-4 h-4 mr-2 opacity-70" />
+              Standard Heatmap
+            </TabsTrigger>
+            <TabsTrigger value="highlight" className="rounded-lg font-bold text-xs uppercase tracking-wider py-2">
+              <Target className="w-4 h-4 mr-2 opacity-70" />
+              Focus View (Top 20%)
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="standard" className="focus-visible:outline-none">
+            <div className="rounded-xl bg-muted/20 border border-border/50 p-4 relative min-h-[600px] flex justify-center items-center overflow-hidden">
+              <div ref={mapRef} className="w-full flex justify-center transition-opacity duration-500" />
+            </div>
+            <div className="mt-6 flex flex-wrap gap-6 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-primary/20 border border-primary/30" />
+                <span>Quantile scale (8 steps)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-muted/40" />
+                <span>Albers Equal-Area Projection</span>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="highlight" className="focus-visible:outline-none">
+            <div className="rounded-xl bg-muted/20 border border-border/50 p-4 relative min-h-[600px] flex justify-center items-center overflow-hidden">
+              <div ref={highlightMapRef} className="w-full flex justify-center transition-opacity duration-500" />
+            </div>
+            <div className="mt-8 grid md:grid-cols-3 gap-6 p-6 bg-muted/10 border border-border/40 rounded-2xl">
+              <div className="space-y-2">
+                <h4 className="text-sm font-black uppercase tracking-tighter text-foreground flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-blue-700" /> Top 10% Tier
+                </h4>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Counties with values above <strong>{thresholds.p90.toFixed(1)}%</strong>. These represent the highest prevalence areas in the nation.
+                </p>
+              </div>
+              <div className="space-y-2 border-x border-border/50 px-6">
+                <h4 className="text-sm font-black uppercase tracking-tighter text-foreground flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-blue-300" /> Next 10% Tier
+                </h4>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Values between <strong>{thresholds.p80.toFixed(1)}%</strong> and <strong>{thresholds.p90.toFixed(1)}%</strong>. At-risk counties moving toward peak levels.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <h4 className="text-sm font-black uppercase tracking-tighter text-muted-foreground flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-muted" /> Base 80%
+                </h4>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  All other counties with relatively lower prevalence. Neutralized to emphasize geographic clusters of concern.
+                </p>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+
+      <CardFooter className="border-t border-border bg-muted/5 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <p className="text-xs text-muted-foreground italic">
+          * Data filtered for statistical significance. Shading uses standardized regional boundary smoothing.
         </p>
-      </div>
-
-      <div>
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold">County Mental Health Prevalence Map</h3>
-          <p className="text-sm text-gray-600">
-            Percentage of adults reporting poor mental health for 14+ days per month
-          </p>
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-background border border-border rounded-lg shadow-sm text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          Source: CDC BRFSS Cumulative Dataset
         </div>
-        <div>
-          <div ref={mapRef} className="flex justify-center" style={{ minHeight: '600px' }} />
-          <p className="text-sm text-gray-600 mt-4">
-            This choropleth map uses quantile scaling to divide {countyData.length} counties into equal-sized groups,
-            ensuring good color distribution across geographic regions. Hover over counties for detailed information
-            including population data.
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-        <h3 className="font-semibold mb-2">Choropleth Map Features</h3>
-        <div className="grid md:grid-cols-3 gap-4 text-sm">
-          <div>
-            <h4 className="font-medium">Color Encoding</h4>
-            <ul className="list-disc list-inside text-gray-600 space-y-1">
-              <li>Quantile-based color scaling</li>
-              <li>7 color gradations for nuance</li>
-              <li>Interactive legend</li>
-              <li>Customizable color schemes</li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-medium">Geographic Features</h4>
-            <ul className="list-disc list-inside text-gray-600 space-y-1">
-              <li>County-level detail</li>
-              <li>State boundary overlay</li>
-              <li>Albers projection for accuracy</li>
-              <li>Clean boundary styling</li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-medium">Interactivity</h4>
-            <ul className="list-disc list-inside text-gray-600 space-y-1">
-              <li>Hover tooltips with details</li>
-              <li>County names and values</li>
-              <li>Responsive design</li>
-              <li>Data-driven styling</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   );
 };
 

@@ -14,6 +14,9 @@ import {
   Brush
 } from 'recharts';
 import { useTheme } from 'next-themes';
+import { Button } from "@/viz/ui/button";
+import { Grid3X3 } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface DataPoint {
   date: string;
@@ -67,7 +70,7 @@ const DualAxisChart: React.FC<DualAxisChartProps> = ({
   series2Name,
   series1Unit = '',
   series2Unit = '',
-  title = "Dual Axis Chart",
+  title = "Dual Axis Analysis",
   description,
   showRecessions = true
 }) => {
@@ -75,14 +78,13 @@ const DualAxisChart: React.FC<DualAxisChartProps> = ({
   const { theme } = useTheme();
 
   const colors = {
-    series1: '#4299e1',
-    series2: '#f59e0b',
+    series1: 'var(--chart-1)',
+    series2: 'var(--chart-2)',
   };
 
   const filteredData = useMemo(() => {
     if (!series1Data?.length || !series2Data?.length) return [];
 
-    // Use the latest data point as reference (not today's date)
     const latestDate1 = new Date(series1Data[series1Data.length - 1].date);
     const latestDate2 = new Date(series2Data[series2Data.length - 1].date);
     const now = new Date(Math.min(+latestDate1, +latestDate2));
@@ -98,7 +100,6 @@ const DualAxisChart: React.FC<DualAxisChartProps> = ({
     const filteredSeries1 = series1Data.filter(item => new Date(item.date) >= startDate);
     const filteredSeries2 = series2Data.filter(item => new Date(item.date) >= startDate);
 
-    // Merge by matching dates
     const mergedData: Record<string, number | string>[] = [];
     let i = 0, j = 0;
 
@@ -143,8 +144,8 @@ const DualAxisChart: React.FC<DualAxisChartProps> = ({
       .filter((v): v is number => !isNaN(v));
     const min = Math.min(...values);
     const max = Math.max(...values);
-    const margin = (max - min) * 0.1;
-    return [min - margin, max + margin];
+    const margin = (max - min) * 0.15;
+    return [Math.max(0, min - margin), max + margin];
   }, [filteredData, series1Name]);
 
   const yAxis2Domain = useMemo(() => {
@@ -154,158 +155,181 @@ const DualAxisChart: React.FC<DualAxisChartProps> = ({
       .filter((v): v is number => !isNaN(v));
     const min = Math.min(...values);
     const max = Math.max(...values);
-    const margin = (max - min) * 0.1;
-    return [min - margin, max + margin];
+    const margin = (max - min) * 0.15;
+    return [Math.max(0, min - margin), max + margin];
   }, [filteredData, series2Name]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-background p-4 rounded-lg shadow-lg border border-border">
-          <p className="font-bold text-foreground">{formatDate(label || '')}</p>
-          {payload.map((entry: any) => (
-            <p key={entry.dataKey} className="text-sm text-muted-foreground flex items-center">
-              <span className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: entry.color }} />
-              <span>{entry.name}:</span>
-              <span className="ml-1 font-medium" style={{ color: entry.color }}>
-                {typeof entry.value === 'number'
-                  ? `${entry.value.toFixed(1)} ${entry.name === series1Name ? series1Unit : series2Unit}`
-                  : 'N/A'}
-              </span>
-            </p>
-          ))}
+        <div className="bg-popover/95 backdrop-blur-sm border border-border shadow-2xl rounded-xl p-4 min-w-[220px] animate-in fade-in zoom-in-95 duration-200">
+          <p className="font-bold text-foreground mb-3 pb-2 border-b border-border">{formatDate(label || '')}</p>
+          <div className="space-y-2">
+            {payload.map((entry: any) => (
+              <div key={entry.dataKey} className="flex justify-between items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                  <span className="text-muted-foreground text-sm font-medium truncate max-w-[120px]">{entry.name}:</span>
+                </div>
+                <span className="font-mono font-bold text-sm" style={{ color: entry.color }}>
+                  {entry.value.toFixed(1)} <span className="text-[10px] opacity-70">{entry.name === series1Name ? series1Unit : series2Unit}</span>
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       );
     }
     return null;
   };
 
-  return (
-    <div className="w-full bg-background rounded-lg border">
-      <div className="flex flex-row items-center justify-between p-6 pb-2">
-        <h3 className="text-lg font-semibold">{title}</h3>
-        <div className="flex items-center space-x-2">
-          {timeRanges.map((range) => (
-            <button
-              key={range}
-              onClick={() => setTimeRange(range)}
-              className={`px-3 py-1 text-sm rounded transition-all ${
-                timeRange === range
-                  ? 'bg-primary text-primary-foreground'
-                  : 'hover:bg-muted'
-              }`}
-            >
-              {range}
-            </button>
-          ))}
-        </div>
-      </div>
+  const TimeRangeButtonComponent = ({ active, onClick, children }: { active: boolean, onClick: () => void, children: React.ReactNode }) => (
+    <Button
+      variant={active ? "secondary" : "ghost"}
+      size="sm"
+      onClick={onClick}
+      className={`h-8 px-3 text-xs font-bold transition-all ${active ? 'shadow-sm bg-background border border-border' : 'text-muted-foreground hover:text-foreground'}`}
+    >
+      {children}
+    </Button>
+  );
 
-      <div className="p-6 pt-0">
-        {description && (
-          <p className="text-sm text-muted-foreground mb-6">{description}</p>
-        )}
-        <div className="h-96">
+  return (
+    <Card className="w-full bg-card text-card-foreground border border-border rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300">
+      <CardHeader className="p-0 mb-6 border-b border-border pb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <CardTitle className="text-2xl font-bold tracking-tight inline-flex items-center gap-2">
+              <Grid3X3 className="text-primary w-5 h-5" /> {title}
+            </CardTitle>
+            <CardDescription className="text-base">{description || "Comparison of two distinct data series over time."}</CardDescription>
+          </div>
+          <div className="flex items-center bg-muted/50 p-1 rounded-lg border border-border self-start">
+            {timeRanges.map((range) => (
+              <TimeRangeButtonComponent
+                key={range}
+                active={timeRange === range}
+                onClick={() => setTimeRange(range)}
+              >
+                {range}
+              </TimeRangeButtonComponent>
+            ))}
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="p-0">
+        <div className="h-[450px] w-full relative">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={filteredData}
-              margin={{ top: 20, right: 60, left: 0, bottom: 0 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
+            <LineChart data={filteredData} margin={{ top: 20, right: 20, left: 0, bottom: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" strokeOpacity={0.4} />
               <Legend
                 verticalAlign="top"
-                align="left"
-                height={36}
+                align="center"
+                height={40}
                 iconType="circle"
-                formatter={(value) => <span className="text-sm text-muted-foreground">{value}</span>}
+                iconSize={8}
+                formatter={(value) => <span className="text-xs font-bold text-foreground/80 lowercase tracking-wider ml-1">{value}</span>}
               />
-              <Brush
-                dataKey="date"
-                height={30}
-                stroke="#8884d8"
-                tickFormatter={formatDate}
-              >
-                <LineChart>
-                  <Line dataKey={series1Name} stroke={colors.series1} dot={false} />
-                  <Line dataKey={series2Name} stroke={colors.series2} dot={false} />
-                </LineChart>
-              </Brush>
+
               <XAxis
                 dataKey="date"
                 axisLine={false}
                 tickLine={false}
                 tickFormatter={formatDate}
-                tick={{ fill: theme === 'dark' ? '#9CA3AF' : '#6B7280', fontSize: 12 }}
+                tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
                 dy={10}
-                minTickGap={5}
-                interval="preserveStartEnd"
+                minTickGap={40}
               />
+
               <YAxis
                 yAxisId="left"
                 domain={yAxis1Domain}
                 orientation="left"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: theme === 'dark' ? '#9CA3AF' : '#6B7280', fontSize: 12 }}
-                width={60}
-                label={{
-                  value: series1Unit,
-                  angle: -90,
-                  position: 'insideLeft',
-                  style: { fill: colors.series1, fontSize: 12 }
-                }}
-                tickFormatter={(value) => value.toFixed(1)}
+                tick={{ fill: colors.series1, fontSize: 11, fontWeight: 600 }}
+                width={50}
+                tickFormatter={(value) => value.toFixed(0)}
               />
+
               <YAxis
                 yAxisId="right"
                 domain={yAxis2Domain}
                 orientation="right"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: theme === 'dark' ? '#9CA3AF' : '#6B7280', fontSize: 12 }}
-                width={60}
-                label={{
-                  value: series2Unit,
-                  angle: 90,
-                  position: 'insideRight',
-                  style: { fill: colors.series2, fontSize: 12 }
-                }}
-                tickFormatter={(value) => value.toFixed(1)}
+                tick={{ fill: colors.series2, fontSize: 11, fontWeight: 600 }}
+                width={50}
+                tickFormatter={(value) => value.toFixed(0)}
               />
-              <Tooltip content={<CustomTooltip />} />
+
+              <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--border)', strokeWidth: 1 }} />
+
               {showRecessions && recessionPeriods.map((period, index) => (
                 <ReferenceArea
                   key={index}
                   x1={period.start}
                   x2={period.end}
-                  className="fill-muted"
-                  fillOpacity={0.4}
+                  fill="var(--muted)"
+                  fillOpacity={0.12}
                   ifOverflow="visible"
                 />
               ))}
+
               <Line
                 yAxisId="left"
                 type="monotone"
                 dataKey={series1Name}
                 stroke={colors.series1}
-                strokeWidth={2}
+                strokeWidth={3}
                 dot={false}
-                activeDot={{ r: 6, fill: colors.series1 }}
+                activeDot={{ r: 6, strokeWidth: 0, fill: colors.series1 }}
+                isAnimationActive={true}
+                animationDuration={1500}
               />
               <Line
                 yAxisId="right"
                 type="monotone"
                 dataKey={series2Name}
                 stroke={colors.series2}
-                strokeWidth={2}
+                strokeWidth={3}
                 dot={false}
-                activeDot={{ r: 6, fill: colors.series2 }}
+                activeDot={{ r: 6, strokeWidth: 0, fill: colors.series2 }}
+                isAnimationActive={true}
+                animationDuration={1500}
               />
+
+              <Brush
+                dataKey="date"
+                height={30}
+                stroke="var(--border)"
+                fill="var(--background)"
+                tickFormatter={formatDate}
+                travellerWidth={8}
+              >
+                <LineChart>
+                  <Line dataKey={series1Name} stroke={colors.series1} strokeWidth={1} dot={false} />
+                  <Line dataKey={series2Name} stroke={colors.series2} strokeWidth={1} dot={false} />
+                </LineChart>
+              </Brush>
             </LineChart>
           </ResponsiveContainer>
         </div>
-      </div>
-    </div>
+      </CardContent>
+
+      <CardFooter className="p-0 flex items-center gap-4 border-t border-border mt-6 pt-6 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/50">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-2 bg-muted/40 rounded-sm" />
+          <span>Shaded areas indicate US recessions</span>
+        </div>
+        <div className="ml-auto flex items-center gap-4">
+          <span style={{ color: colors.series1 }}>Axis Left: {series1Unit || 'Units'}</span>
+          <span className="w-1 h-1 rounded-full bg-border" />
+          <span style={{ color: colors.series2 }}>Axis Right: {series2Unit || 'Units'}</span>
+        </div>
+      </CardFooter>
+    </Card>
   );
 };
 

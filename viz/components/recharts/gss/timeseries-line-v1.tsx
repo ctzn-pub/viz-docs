@@ -113,14 +113,14 @@ export default function TimeTrendDemoChart({
     }, [demographicGroups, defaultVisibleGroups]);
 
     if (!data || !data.dataPoints || !Array.isArray(data.dataPoints) || data.dataPoints.length === 0) {
-        return <div className="p-4 text-center text-gray-500">No data available to display chart.</div>;
+        return <div className="p-12 text-center text-muted-foreground bg-card rounded-xl border border-dashed border-border">No data available to display chart.</div>;
     }
 
     const processedDataPoints = data.dataPoints.map(processDataPoint);
     const allValidYearsNumeric = processedDataPoints.map(d => d.year).filter((year): year is number => year !== null);
 
     if (allValidYearsNumeric.length === 0) {
-        return <div className="p-4 text-center text-gray-500">Data contains no valid years.</div>;
+        return <div className="p-12 text-center text-muted-foreground bg-card rounded-xl border border-dashed border-border">Data contains no valid years.</div>;
     }
 
     const minYearInData = Math.min(...allValidYearsNumeric);
@@ -190,16 +190,16 @@ export default function TimeTrendDemoChart({
         const minRange = 10;
 
         if (finalMin >= finalMax) {
-             const centerValue = Math.min(100, Math.max(0, (effectiveMin + effectiveMax) / 2));
-             yDomain = [Math.max(0, Math.floor((centerValue - minRange / 2) / 5) * 5), Math.min(100, Math.ceil((centerValue + minRange / 2) / 5) * 5)];
-             if (yDomain[0] >= yDomain[1]) { yDomain = [Math.max(0, finalMin - 5), Math.min(100, finalMax + 5)]; }
+            const centerValue = Math.min(100, Math.max(0, (effectiveMin + effectiveMax) / 2));
+            yDomain = [Math.max(0, Math.floor((centerValue - minRange / 2) / 5) * 5), Math.min(100, Math.ceil((centerValue + minRange / 2) / 5) * 5)];
+            if (yDomain[0] >= yDomain[1]) { yDomain = [Math.max(0, finalMin - 5), Math.min(100, finalMax + 5)]; }
         } else if (finalMax - finalMin < minRange) {
-             const midPoint = (finalMin + finalMax) / 2;
-             yDomain = [Math.max(0, Math.floor((midPoint - minRange / 2) / 5) * 5), Math.min(100, Math.ceil((midPoint + minRange / 2) / 5) * 5)];
-             if (yDomain[0] >= yDomain[1]) {
-                 yDomain = [Math.max(0, finalMin - buffer), Math.min(100, finalMax + buffer)];
-                 if(yDomain[0] >= yDomain[1]) yDomain = [Math.max(0, finalMin - 5), Math.min(100, finalMax + 5)];
-             }
+            const midPoint = (finalMin + finalMax) / 2;
+            yDomain = [Math.max(0, Math.floor((midPoint - minRange / 2) / 5) * 5), Math.min(100, Math.ceil((midPoint + minRange / 2) / 5) * 5)];
+            if (yDomain[0] >= yDomain[1]) {
+                yDomain = [Math.max(0, finalMin - buffer), Math.min(100, finalMax + buffer)];
+                if (yDomain[0] >= yDomain[1]) yDomain = [Math.max(0, finalMin - 5), Math.min(100, finalMax + 5)];
+            }
         } else {
             yDomain = [finalMin, finalMax];
         }
@@ -229,6 +229,19 @@ export default function TimeTrendDemoChart({
         return `${prefix}${formattedValue}${suffix}`;
     };
 
+    const getThemeColor = (index: number) => {
+        const colors = [
+            'var(--chart-1)',
+            'var(--chart-2)',
+            'var(--chart-3)',
+            'var(--chart-4)',
+            'var(--chart-5)',
+            '#795548', // fallback
+            '#607d8b'
+        ];
+        return colors[index % colors.length];
+    };
+
     const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: TooltipPayloadItem[]; label?: string | number }) => {
         if (!active || !payload || payload.length === 0 || label === undefined) return null;
         const visiblePayload = payload.filter(series => visibleGroups.has(series.name));
@@ -238,44 +251,52 @@ export default function TimeTrendDemoChart({
         const prefix = (typeof valueMetadata?.value_prefix === 'string') ? valueMetadata.value_prefix : '';
 
         return (
-            <div className="bg-white p-3 border border-gray-300 shadow-lg rounded-md text-sm max-w-xs">
-                <p className="font-semibold mb-2 text-gray-700">{`Year: ${label}`}</p>
-                {visiblePayload.map((series) => {
-                    const colorIndex = demographicGroups.indexOf(series.name);
-                    const color = colorIndex !== -1 ? COLORS[colorIndex % COLORS.length] : series.color || '#8884d8';
-                    const pointData = series.payload;
-                    return (
-                        <div key={series.name} className="mb-1.5 last:mb-0">
-                            <p className="font-medium" style={{ color: color }}>{series.name}</p>
-                            <p className="text-gray-600" style={{ color: color }}>
-                                {`Value: ${series.value != null ? `${prefix}${series.value.toFixed(1)}${suffix}` : 'N/A'}`}
-                            </p>
-                            {pointData?.ci_lower !== undefined && pointData?.ci_upper !== undefined && (
-                                <p className="text-gray-500 text-xs">
-                                    {`95% CI: [${pointData.ci_lower.toFixed(1)}%, ${pointData.ci_upper.toFixed(1)}%]`}
-                                </p>
-                            )}
-                            {pointData?.n_actual && (
-                                <p className="text-gray-500 text-xs">
-                                    {`N: ${pointData.n_actual.toLocaleString()}`}
-                                </p>
-                            )}
-                        </div>
-                    );
-                })}
+            <div className="bg-popover/95 backdrop-blur-sm border border-border shadow-2xl rounded-xl p-4 min-w-[220px] animate-in fade-in zoom-in-95 duration-200">
+                <p className="font-semibold text-foreground mb-3 text-sm border-b border-border pb-2">{`Year: ${label}`}</p>
+                <div className="space-y-3">
+                    {visiblePayload.map((series) => {
+                        const colorIndex = demographicGroups.indexOf(series.name);
+                        const color = getThemeColor(colorIndex);
+                        const pointData = series.payload;
+                        return (
+                            <div key={series.name} className="flex flex-col gap-1">
+                                <div className="flex justify-between items-center">
+                                    <span className="font-medium text-sm truncate max-w-[120px]" style={{ color: color }}>{series.name}</span>
+                                    <span className="font-mono font-bold text-foreground">
+                                        {series.value != null ? `${prefix}${series.value.toFixed(1)}${suffix}` : 'N/A'}
+                                    </span>
+                                </div>
+                                {pointData?.ci_lower !== undefined && pointData?.ci_upper !== undefined && (
+                                    <div className="flex justify-between text-xs text-muted-foreground pl-2 border-l-2" style={{ borderColor: color }}>
+                                        <span>95% CI: [{pointData.ci_lower.toFixed(1)}%, {pointData.ci_upper.toFixed(1)}%]</span>
+                                    </div>
+                                )}
+                                {pointData?.n_actual && (
+                                    <div className="text-right text-[10px] text-muted-foreground/60">
+                                        N: {pointData.n_actual.toLocaleString()}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
         );
     };
 
     return (
-        <div className="w-full bg-white p-4 md:p-6 rounded-lg shadow">
-            <div className="mb-4">
-                <h2 className="text-xl font-semibold text-gray-800">{data.metadata.title}</h2>
-                {data.metadata.subtitle && <p className="text-sm text-gray-600 mt-1">{data.metadata.subtitle}</p>}
-                {data.metadata.question && <p className="text-sm text-gray-500 italic mt-1">{data.metadata.question}</p>}
+        <div className="w-full bg-card text-card-foreground border border-border rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300">
+            <div className="mb-6 space-y-2 border-b border-border pb-4">
+                <h2 className="text-xl font-bold tracking-tight">{data.metadata.title}</h2>
+                {data.metadata.subtitle && <p className="text-sm text-muted-foreground">{data.metadata.subtitle}</p>}
+                {data.metadata.question && (
+                    <div className="bg-muted/30 p-2 rounded-lg mt-2">
+                        <p className="text-xs font-medium text-muted-foreground/80 italic">{data.metadata.question}</p>
+                    </div>
+                )}
             </div>
 
-            <div className="h-[450px] md:h-[500px] w-full">
+            <div className="h-[500px] w-full relative">
                 <ResponsiveContainer width="100%" height="100%">
                     <LineChart
                         key={`${demographic}-${showCI}`}
@@ -283,23 +304,25 @@ export default function TimeTrendDemoChart({
                     >
                         {relevantPresidentialTerms.map((term, index) => (
                             <ReferenceArea key={`term-bg-${index}`} x1={term.start} x2={term.end} yAxisId="left"
-                                fill={term.party === "Democrat" ? "rgba(230, 240, 255, 0.5)" : "rgba(255, 235, 238, 0.5)"}
-                                ifOverflow="visible" shapeRendering="crispEdges" />
+                                fill={term.party === "Democrat" ? "var(--chart-1)" : "var(--chart-2)"}
+                                fillOpacity={0.05}
+                                ifOverflow="visible"
+                            />
                         ))}
 
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" vertical={false} />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" strokeOpacity={0.4} />
 
                         <XAxis
                             dataKey="year" type="number"
                             domain={[xAxisMin, xAxisMax]}
                             allowDataOverflow={true}
                             ticks={xAxisTicks}
-                            tick={{ fontSize: 11, fill: '#666' }}
+                            tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
                             padding={{ left: 10, right: 10 }}
                             tickFormatter={(year) => String(year)}
                             interval={0}
-                            axisLine={{ stroke: '#ccc' }}
-                            tickLine={{ stroke: '#ccc' }}
+                            axisLine={false}
+                            tickLine={false}
                         />
 
                         <YAxis
@@ -308,32 +331,33 @@ export default function TimeTrendDemoChart({
                             domain={yDomain}
                             allowDataOverflow={false}
                             axisLine={false} tickLine={false}
-                            tick={{ fontSize: 11, fill: '#666' }}
+                            tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
                             width={50}
                         />
 
-                        <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#a0a0a0', strokeWidth: 1, strokeDasharray: '3 3' }} />
+                        <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--muted-foreground)', strokeWidth: 1, strokeDasharray: '4 4' }} />
 
                         <Legend verticalAlign="bottom" align="center" height={40} onClick={handleLegendClick}
-                            iconSize={10} wrapperStyle={{ paddingTop: '10px' }}
+                            iconSize={10} wrapperStyle={{ paddingTop: '20px' }}
                             formatter={(value) => {
                                 const isVisible = visibleGroups.has(value);
-                                return (<span style={{ color: isVisible ? '#333' : '#aaa', cursor: 'pointer', marginLeft: '4px', fontSize: '12px' }}>{value}</span>);
+                                return (<span className={`ml-1 text-xs cursor-pointer ${isVisible ? 'text-foreground font-medium' : 'text-muted-foreground line-through'}`}>{value}</span>);
                             }} />
 
                         {groupedData.map((group) => {
                             const colorIndex = demographicGroups.indexOf(group.name);
-                            const color = colorIndex !== -1 ? COLORS[colorIndex % COLORS.length] : '#8884d8';
+                            const color = getThemeColor(colorIndex);
                             return (
                                 <Line
                                     key={group.name} yAxisId="left" type="linear"
                                     data={group.data}
-                                    dataKey="value" name={group.name} stroke={color} strokeWidth={2}
-                                    dot={{ r: 3, fill: color, strokeWidth: 1, stroke: 'white' }}
-                                    activeDot={{ r: 5, strokeWidth: 1, stroke: 'white' }}
+                                    dataKey="value" name={group.name} stroke={color} strokeWidth={2.5}
+                                    dot={{ r: 3, fill: color, strokeWidth: 2, stroke: 'var(--background)' }}
+                                    activeDot={{ r: 6, strokeWidth: 2, stroke: 'var(--background)' }}
                                     hide={!visibleGroups.has(group.name)}
                                     connectNulls={true}
-                                    isAnimationActive={false}
+                                    isAnimationActive={true}
+                                    animationDuration={1500}
                                 >
                                     {showCI && hasCIData && (
                                         <ErrorBar
@@ -345,38 +369,24 @@ export default function TimeTrendDemoChart({
                                 </Line>
                             );
                         })}
-
-                        {relevantPresidentialTerms.map((term, index) => (
-                            <Text
-                                key={`term-label-${index}`}
-                                x={(term.start + term.end) / 2}
-                                y={typeof yDomain[1] === 'number' ? yDomain[1] - 3 : 97}
-                                textAnchor="middle"
-                                verticalAnchor="start"
-                                fill="#6b7280"
-                                fontSize={10}
-                            >
-                                {term.president}
-                            </Text>
-                        ))}
-
                     </LineChart>
                 </ResponsiveContainer>
             </div>
 
-            <div className="flex flex-col sm:flex-row justify-between items-center mt-3 sm:mt-1 pt-2 border-t border-gray-200">
-                <div className="text-xs text-gray-500 text-left order-1 sm:order-none">
-                    Source: {data.metadata.source?.name || 'Not specified'}
-                    {data.metadata.observations && ` (${data.metadata.observations.toLocaleString()} Observations)`}
+            <div className="flex flex-col sm:flex-row justify-between items-center mt-6 pt-4 border-t border-border gap-4">
+                <div className="text-xs text-muted-foreground text-left order-2 sm:order-1">
+                    <span className="font-semibold text-foreground">Source:</span> {data.metadata.source?.name || 'Not specified'}
+                    {data.metadata.observations && <span className="ml-2 bg-muted/50 px-2 py-0.5 rounded-full">{data.metadata.observations.toLocaleString()} Observations</span>}
                 </div>
 
-                <div className="flex items-center space-x-2 order-2 sm:order-none">
+                <div className="flex items-center space-x-3 order-1 sm:order-2 bg-muted/30 px-3 py-1.5 rounded-lg border border-border/50">
                     <Switch
                         id="show-ci" checked={showCI} onCheckedChange={setShowCI}
                         disabled={!hasCIData}
+                        className="data-[state=checked]:bg-primary"
                     />
-                    <Label htmlFor="show-ci" className={`text-xs ${!hasCIData ? 'text-gray-400' : 'text-gray-600'}`}>
-                        Show 95% CI
+                    <Label htmlFor="show-ci" className={`text-xs font-medium cursor-pointer ${!hasCIData ? 'text-muted-foreground/50' : 'text-foreground'}`}>
+                        Show 95% Confidence Intervals
                     </Label>
                 </div>
             </div>
