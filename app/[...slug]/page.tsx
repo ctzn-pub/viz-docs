@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import {
   getComponentByPath,
   getSampleDataUrl,
+  getApiDataUrl,
   getGitHubUrl,
   SAMPLE_DATA_BASE,
 } from '@/lib/registry-data';
@@ -125,7 +126,7 @@ export default function ComponentPage() {
 
     const fetchData = async () => {
       try {
-        const url = getSampleDataUrl(componentMeta.sampleData);
+        const url = getApiDataUrl(componentMeta.sampleData);
         const response = await fetch(url);
         if (!response.ok) throw new Error('Failed to fetch data');
 

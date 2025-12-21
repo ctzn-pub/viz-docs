@@ -184,8 +184,6 @@ const SplitBar: React.FC<SplitBarProps> = ({
     const formatValue = (v: number) => `${v.toFixed(1)}%`;
 
     const plot = Plot.plot({
-      title,
-      subtitle,
       caption,
       style: {
         backgroundColor: 'white',
@@ -255,7 +253,13 @@ const SplitBar: React.FC<SplitBarProps> = ({
     };
   }, [data, subcategories, title, subtitle, width, height, colors, categoryLabel, valueLabel, caption, sortBy, sortDirection, marginLeft, showValueLabels]);
 
-  return <div ref={containerRef} className="w-full" />;
+  return (
+    <div className="w-full">
+      {title && <div className="text-xl font-semibold mb-1">{title}</div>}
+      {subtitle && <div className="text-md text-gray-600 mb-2">{subtitle}</div>}
+      <div ref={containerRef} />
+    </div>
+  );
 };
 
 export default SplitBar;

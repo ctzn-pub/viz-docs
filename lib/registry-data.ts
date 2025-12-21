@@ -266,13 +266,29 @@ export function getComponentByPath(path: string) {
   return null;
 }
 
-// Get sample data URL
+// Get sample data URL (original external URL - for display)
 export function getSampleDataUrl(filename: string) {
   // Handle absolute URLs
   if (filename.startsWith('http://') || filename.startsWith('https://')) {
     return filename;
   }
   return `${SAMPLE_DATA_BASE}/${filename}`;
+}
+
+// Get API route URL for data fetching (cached, server-side)
+export function getApiDataUrl(filename: string) {
+  // Handle absolute URLs from ontopic-public-data.t3.storage.dev
+  if (filename.startsWith('https://ontopic-public-data.t3.storage.dev/')) {
+    // Extract the path after the domain
+    const path = filename.replace('https://ontopic-public-data.t3.storage.dev/', '');
+    return `/api/sample-data/${path}`;
+  }
+  // Handle other absolute URLs - use them directly (can't proxy)
+  if (filename.startsWith('http://') || filename.startsWith('https://')) {
+    return filename;
+  }
+  // Default: use the API route
+  return `/api/sample-data/${filename}`;
 }
 
 // Get GitHub source URL
