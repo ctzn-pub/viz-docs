@@ -8,12 +8,10 @@ const nextConfig: NextConfig = {
     // Skip type checking during build (components have minor type issues)
     ignoreBuildErrors: true,
   },
-  eslint: {
-    // Skip linting during build
-    ignoreDuringBuilds: true,
-  },
+  // Note: eslint config moved to CLI options in Next.js 16
   transpilePackages: ['recharts', 'lucide-react', 'd3-geo', 'topojson-client'],
-  cacheComponents: true,
+  // cacheComponents disabled for dynamic routes - requires Suspense boundaries
+  // cacheComponents: true,
 };
 
 const withMDX = createMDX({

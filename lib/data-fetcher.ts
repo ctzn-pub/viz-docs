@@ -1,11 +1,9 @@
-'use cache';
-
 import { getComponentByPath, getSampleDataUrl } from './registry-data';
 import { getTransformForPath } from './data-transforms';
 
 /**
- * Server-side data fetcher optimized with Next.js 16 'use cache'.
- * This caches the fully transformed data for each component.
+ * Server-side data fetcher with fetch caching.
+ * Uses Next.js built-in fetch cache for data requests.
  */
 export async function getCachedComponentData(path: string) {
     const meta = getComponentByPath(path);
@@ -13,7 +11,7 @@ export async function getCachedComponentData(path: string) {
 
     try {
         const url = getSampleDataUrl(meta.sampleData);
-        const response = await fetch(url);
+        const response = await fetch(url, { next: { revalidate: 3600 } });
         if (!response.ok) throw new Error(`Failed to fetch: ${response.statusText}`);
 
         let jsonData;
