@@ -193,12 +193,28 @@ export default function ComponentPage() {
             setData(rows);
           }
         } else {
-          const json = await response.json();
-          // Handle wrapped data format for BRFSS state components
-          if (path.includes('brfss/state-bar') && json.data) {
-            setData(json.data);
-          } else {
-            setData(json);
+          try {
+            const json = await response.json();
+            // Handle wrapped data format for BRFSS state components
+            if (path.includes('brfss/state-bar') && json.data) {
+              setData(json.data);
+            } else {
+              setData(json);
+            }
+          } catch (err) {
+            // Fallback to mock data for Split Bar Chart
+            if (path === 'plot/stats/split-bar-v1') {
+              console.log('Falling back to mock data for Split Bar Chart');
+              const mockResponse = await fetch('/data/mock-split-bar.json');
+              if (mockResponse.ok) {
+                const mockJson = await mockResponse.json();
+                setData(mockJson);
+              } else {
+                throw err;
+              }
+            } else {
+              throw err;
+            }
           }
         }
       } catch (err) {
@@ -209,7 +225,7 @@ export default function ComponentPage() {
     };
 
     fetchData();
-  }, [componentMeta]);
+  }, [path, componentMeta?.sampleData]);
 
   if (!componentMeta || !Component) {
     return (
@@ -322,9 +338,9 @@ export default function ComponentPage() {
                       const stateData = rawData?.state_data;
                       const formattedData = stateData
                         ? Object.keys(stateData).map((key) => ({
-                            state: stateData[key].state_name,
-                            value: stateData[key].overall
-                          }))
+                          state: stateData[key].state_name,
+                          value: stateData[key].overall
+                        }))
                         : [];
                       return (
                         <Component

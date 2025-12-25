@@ -117,7 +117,7 @@ const SplitBar: React.FC<SplitBarProps> = ({
   subtitle,
   width = 800,
   height = 750,
-  colors = DEFAULT_COLORS,
+  colors = ['#6366f1', '#f43f5e', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'],
   categoryLabel = '',
   valueLabel = '',
   caption = '',
@@ -167,7 +167,8 @@ const SplitBar: React.FC<SplitBarProps> = ({
       subcategories.map((subCat) => ({
         category: d.category,
         subcategory: subCat,
-        value: d.values?.[subCat]?.value ?? null
+        value: d.values?.[subCat]?.value ?? null,
+        overall: d.overall
       }))
     ).filter((d) => d.value !== null);
 
@@ -178,71 +179,98 @@ const SplitBar: React.FC<SplitBarProps> = ({
         .map((s) => d.values?.[s]?.value)
         .filter((v): v is number => v != null)
     ]);
-    const minValue = Math.min(...allValues);
     const maxValue = Math.max(...allValues);
 
     const formatValue = (v: number) => `${v.toFixed(1)}%`;
 
     const plot = Plot.plot({
-      caption,
+      // caption, // Moved to React
       style: {
-        backgroundColor: 'white',
-        fontFamily: 'sans-serif'
+        backgroundColor: 'transparent',
+        fontFamily: 'Inter, system-ui, sans-serif',
+        fontSize: '12px',
+        color: '#374151'
       },
       color: {
-        legend: true,
+        legend: false, // Moved to React
         domain: subcategories,
-        range: subcategories.map((_, i) => colors[i % colors.length])
+        range: colors
       },
       marginLeft,
-      marginRight: 40,
-      marginBottom: 60,
+      marginRight: 60,
+      marginBottom: 50, // Increased to prevent label cutoff
       width,
       height,
-      clip: true,
+      clip: false,
       y: {
         label: categoryLabel,
-        domain: sortedData.map((d) => d.category)
+        domain: sortedData.map((d) => d.category),
+        tickSize: 0,
+        padding: 0.4
       },
       x: {
         label: valueLabel,
-        domain: [minValue, maxValue],
-        grid: true
+        domain: [0, Math.max(maxValue, 100)],
+        grid: true,
+        nice: true,
+        labelOffset: 45
       },
       marks: [
+        // Grid lines
+        Plot.gridX({ stroke: '#e5e7eb', strokeOpacity: 0.5 }),
+
         // Background bars for overall values
         Plot.barX(sortedData, {
           y: 'category',
           x: 'overall',
-          fill: '#e4e4e4',
-          title: (d) => `Overall: ${formatValue(d.overall)}`
+          fill: '#f3f4f6',
+          rx: 4,
         }),
+
         // Dots for subcategory values
         Plot.dot(dotData, {
           y: 'category',
           x: 'value',
           fill: 'subcategory',
-          r: 5,
-          tip: true,
-          title: (d) => `${d.subcategory}: ${formatValue(d.value!)}`
+          stroke: 'white',
+          strokeWidth: 2,
+          r: 6,
         }),
+
         // Value labels on bars
         ...(showValueLabels
           ? [
-              Plot.text(sortedData, {
-                y: 'category',
-                x: 'overall',
-                text: (d) => formatValue(d.overall),
-                dx: -25,
-                fill: 'black',
-                fontSize: 9,
-                fontWeight: 'normal',
-                textAnchor: 'start'
-              })
-            ]
+            Plot.text(sortedData, {
+              y: 'category',
+              x: 'overall',
+              text: (d) => formatValue(d.overall),
+              dx: 8,
+              fill: '#6b7280',
+              fontSize: 11,
+              fontWeight: 500,
+              textAnchor: 'start'
+            })
+          ]
           : []),
+
         // Zero reference line
-        Plot.ruleX([minValue])
+        Plot.ruleX([0], { stroke: '#9ca3af', strokeWidth: 1.5 }),
+
+        // Shared Tooltip (Moved to end for z-index)
+        Plot.tip(sortedData, Plot.pointerY({
+          x: "overall",
+          y: "category",
+          title: (d) => {
+            const subValues = subcategories
+              .map(s => {
+                const val = d.values?.[s]?.value;
+                return val != null ? `${s}: ${formatValue(val)}` : null;
+              })
+              .filter(Boolean)
+              .join('\n');
+            return `${d.category}\nOverall: ${formatValue(d.overall)}\n${subValues}`;
+          }
+        }))
       ]
     });
 
@@ -254,10 +282,42 @@ const SplitBar: React.FC<SplitBarProps> = ({
   }, [data, subcategories, title, subtitle, width, height, colors, categoryLabel, valueLabel, caption, sortBy, sortDirection, marginLeft, showValueLabels]);
 
   return (
-    <div className="w-full">
-      {title && <div className="text-xl font-semibold mb-1">{title}</div>}
-      {subtitle && <div className="text-md text-gray-600 mb-2">{subtitle}</div>}
-      <div ref={containerRef} />
+    <div className="w-full bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+      {/* Title & Subtitle */}
+      {(title || subtitle) && (
+        <div className="mb-2">
+          {title && <h2 className="text-2xl font-bold text-gray-900 tracking-tight mb-2">{title}</h2>}
+          {subtitle && <p className="text-gray-500 text-sm leading-relaxed max-w-2xl">{subtitle}</p>}
+        </div>
+      )}
+
+      {/* Custom Legend */}
+      <div className="flex flex-wrap items-center gap-6 mb-4">
+        {subcategories.map((sub, i) => (
+          <div key={sub} className="flex items-center gap-2">
+            <span
+              className="w-3 h-3 rounded-full shadow-sm"
+              style={{ backgroundColor: colors[i % colors.length] }}
+            />
+            <span className="text-sm font-medium text-gray-700">{sub}</span>
+          </div>
+        ))}
+        {/* Overall Legend Item */}
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 rounded-sm bg-gray-100 border border-gray-200" />
+          <span className="text-sm font-medium text-gray-500">Overall</span>
+        </div>
+      </div>
+
+      {/* Chart Container */}
+      <div ref={containerRef} className="overflow-visible" />
+
+      {/* Custom Caption */}
+      {caption && (
+        <div className="mt-6 pt-4 border-t border-gray-50 text-xs text-gray-400 italic">
+          {caption}
+        </div>
+      )}
     </div>
   );
 };

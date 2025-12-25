@@ -1,0 +1,63 @@
+{
+    "clean_title": "Mock Split Bar Chart",
+    "question": "This is a mock subtitle for testing the improved design.",
+    "data_value_type": "Percentage",
+    "data_value_unit": "%",
+    "class": "Test Class",
+    "year": "2025",
+    "demographic_category": "Test Category",
+    "states": [
+        {
+            "state_name": "California",
+            "state_abbr": "CA",
+            "overall": 65.5,
+            "values": {
+                "Subcategory A": {
+                    "value": 75.2
+                },
+                "Subcategory B": {
+                    "value": 55.8
+                }
+            }
+        },
+        {
+            "state_name": "New York",
+            "state_abbr": "NY",
+            "overall": 58.2,
+            "values": {
+                "Subcategory A": {
+                    "value": 62.1
+                },
+                "Subcategory B": {
+                    "value": 54.3
+                }
+            }
+        },
+        {
+            "state_name": "Texas",
+            "state_abbr": "TX",
+            "overall": 72.1,
+            "values": {
+                "Subcategory A": {
+                    "value": 80.5
+                },
+                "Subcategory B": {
+                    "value": 63.7
+                }
+            }
+        },
+        {
+            "state_name": "Florida",
+            "state_abbr": "FL",
+            "overall": 61.4,
+            "values": {
+                "Subcategory A": {
+                    "value": 68.9
+                },
+                "Subcategory B": {
+                    "value": 53.9
+                }
+            }
+        }
+    ]
+}
