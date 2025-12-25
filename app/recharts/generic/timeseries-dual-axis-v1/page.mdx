@@ -1,0 +1,24 @@
+import { ComponentDoc } from '@/components/ComponentDoc';
+import DualAxisChart from '@/viz/components/recharts/generic/timeseries-dual-axis-v1';
+
+<ComponentDoc 
+  path="recharts/generic/timeseries-dual-axis-v1" 
+  Component={DualAxisChart}
+>
+
+## Overview
+
+The `DualAxisChart` is essential for visualizing two different time series that share a temporal dimension but have vastly different scales. 
+
+## Features
+
+- **Independent Y-Axes**: Left and right axes for different units.
+- **Synchronized X-Axis**: Ensures temporal alignment.
+- **Responsive Legend**: Clearly identifies each series and its corresponding axis.
+
+## When to Use
+
+- Comparing **Price vs. Volume**.
+- Visualizing **KPIs with different units** (e.g., Dollars vs. Percentages).
+
+</ComponentDoc>

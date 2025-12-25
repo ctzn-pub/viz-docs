@@ -3,8 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const SAMPLE_DATA_BASE = 'https://ontopic-public-data.t3.storage.dev/sample-data';
 const CDC_DATA_BASE = 'https://ontopic-public-data.t3.storage.dev/cdc-data';
 
-// Cache for 1 hour, stale-while-revalidate for 24 hours
-export const revalidate = 3600;
+// Caching is now handled by Next.js 16 Cache Components
 
 export async function GET(
   request: NextRequest,

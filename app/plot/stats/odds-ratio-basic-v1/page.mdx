@@ -1,0 +1,18 @@
+import { ComponentDoc } from '@/components/ComponentDoc';
+import OddsRatioBasic from '@/viz/components/plot/stats/odds-ratio-basic-v1';
+
+<ComponentDoc 
+  path="plot/stats/odds-ratio-basic-v1" 
+  Component={OddsRatioBasic}
+>
+
+## Overview
+
+Visualizes the relationship between an exposure and an outcome using Odds Ratios and their corresponding confidence intervals.
+
+## Interpretation
+
+- **Log Scale**: Typically rendered on a log scale to ensure symmetry around the null value (1.0).
+- **Statistical Significance**: If the interval crosses 1.0, the effect is generally considered not statistically significant at the chosen alpha level.
+
+</ComponentDoc>

@@ -17,17 +17,32 @@ export const metadata: Metadata = {
   description: "Visualization components you can copy into your project",
 };
 
+import { Sidebar } from "@/components/Sidebar";
+import { ThemeProvider } from "@/components/ThemeProvider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <div className="flex bg-background min-h-screen">
+            <Sidebar />
+            <main className="flex-1 overflow-y-auto">
+              {children}
+            </main>
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   );

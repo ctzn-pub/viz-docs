@@ -1,0 +1,29 @@
+import { ComponentDoc } from '@/components/ComponentDoc';
+import IndexChart from '@/viz/components/recharts/generic/timeseries-index-v1';
+
+<ComponentDoc 
+  path="recharts/generic/timeseries-index-v1" 
+  Component={IndexChart}
+>
+
+## Overview
+
+The `IndexChart` is the primary tool for "base-year normalization." It allows for a direct comparison of growth rates between series, even if their raw levels are separated by orders of magnitude.
+
+## Data Contract
+
+The component expects two series in the FRED-style observations format.
+
+```typescript
+interface Series {
+  title: string;
+  observations: { date: string; value: string }[];
+}
+```
+
+## Best Practices
+
+- **Choose a Meaningful Base**: The first data point is set to 100 by default. Ensure this is a logical comparison point.
+- **Be Careful with Ratios**: If one series starts at zero or is highly volatile, indexing can be misleading.
+
+</ComponentDoc>

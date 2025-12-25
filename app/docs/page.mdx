@@ -1,0 +1,24 @@
+# The Architecture of Evidence
+
+Welcome to the **@ontopic/viz** documentation. This library is both a philosophical and technical guide to building credible visual evidence on the web—where R/Python’s statistical rigor meets modern interactive publishing.
+
+## 🧬 This is a Living Specification
+
+Unlike a static textbook, this project serves as the **Documentation of the Data Contract** for human and AI collaborators. It defines the formal bridge between analytical models and the visual interface.
+
+## 🛠 The Technology Stack
+
+- **Observable Plot**: technical, exploratory, and statistical graphics (the “ggplot2 of the web”).
+- **Recharts**: polished, operational dashboards and executive summaries.
+- **Tigris & Next.js**: the pipeline for delivering asynchronous model outputs from Python/R agents to the browser.
+
+## 🤖 The Agentic Workflow
+
+1. **Estimate**: An agent (or human) runs a model in Python or R.
+2. **Contract**: The analysis is serialized into a JSON payload conforming to the specs defined in this handbook.
+3. **Dispatch**: The payload is pushed to a **Tigris S3** bucket.
+4. **Render**: The Next.js frontend detects the new data and hydrates the corresponding component instantly.
+
+---
+
+Explore the components using the sidebar to see live examples and implementation details.
