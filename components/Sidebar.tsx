@@ -15,7 +15,9 @@ import {
     BookOpen,
     PieChart,
     LineChart,
-    Target
+    Target,
+    Menu,
+    X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { REGISTRY } from '@/lib/registry-data';
