@@ -11,6 +11,7 @@ export interface ComponentMeta {
 export interface CategoryMeta {
   title: string;
   description: string;
+  domain: 'Generic' | 'Health' | 'Survey' | 'Geographic' | 'Statistical' | 'Dashboards';
   components: ComponentMeta[];
 }
 
@@ -18,6 +19,7 @@ export const REGISTRY: Record<string, CategoryMeta> = {
   'recharts/generic': {
     title: 'Generic Charts',
     description: 'Reusable chart components for any dataset',
+    domain: 'Generic',
     components: [
       {
         id: 'timeseries-basic-v1',
@@ -48,6 +50,7 @@ export const REGISTRY: Record<string, CategoryMeta> = {
   'recharts/brfss': {
     title: 'BRFSS (Health Surveillance)',
     description: 'Components for CDC BRFSS health survey data',
+    domain: 'Health',
     components: [
       {
         id: 'state-bar-v1',
@@ -66,6 +69,7 @@ export const REGISTRY: Record<string, CategoryMeta> = {
   'recharts/gss': {
     title: 'GSS (General Social Survey)',
     description: 'Components for GSS polling and opinion data',
+    domain: 'Survey',
     components: [
       {
         id: 'timetrend-demo-v1',
@@ -78,6 +82,7 @@ export const REGISTRY: Record<string, CategoryMeta> = {
   'recharts/ess': {
     title: 'ESS (European Social Survey)',
     description: 'Components for European survey data',
+    domain: 'Survey',
     components: [
       {
         id: 'scatter-regression-v1',
@@ -90,6 +95,7 @@ export const REGISTRY: Record<string, CategoryMeta> = {
   'plot/gss': {
     title: 'GSS (Observable Plot)',
     description: 'General Social Survey visualizations using Observable Plot',
+    domain: 'Survey',
     components: [
       {
         id: 'timetrend-demo-v1',
@@ -102,6 +108,7 @@ export const REGISTRY: Record<string, CategoryMeta> = {
   'plot/geo': {
     title: 'Geographic Maps',
     description: 'Map visualizations using Observable Plot',
+    domain: 'Geographic',
     components: [
       {
         id: 'state-map-v1',
@@ -126,6 +133,7 @@ export const REGISTRY: Record<string, CategoryMeta> = {
   'plot/health': {
     title: 'Health Visualizations',
     description: 'Health data analysis using Observable Plot',
+    domain: 'Health',
     components: [
       {
         id: 'health-scatter-basic-v1',
@@ -150,6 +158,7 @@ export const REGISTRY: Record<string, CategoryMeta> = {
   'plot/brfss': {
     title: 'BRFSS (Observable Plot)',
     description: 'CDC BRFSS health survey visualizations using Observable Plot',
+    domain: 'Health',
     components: [
       {
         id: 'state-bar-v1',
@@ -162,6 +171,7 @@ export const REGISTRY: Record<string, CategoryMeta> = {
   'plot/timeseries': {
     title: 'Time Series (Observable Plot)',
     description: 'Time series visualizations using Observable Plot',
+    domain: 'Generic',
     components: [
       {
         id: 'multiline-v1',
@@ -174,6 +184,7 @@ export const REGISTRY: Record<string, CategoryMeta> = {
   'plot/stats': {
     title: 'Statistical Visualizations',
     description: 'Statistical analysis charts using Observable Plot',
+    domain: 'Statistical',
     components: [
       {
         id: 'odds-ratio-basic-v1',
@@ -228,6 +239,7 @@ export const REGISTRY: Record<string, CategoryMeta> = {
   'composite/dashboards': {
     title: 'Dashboards',
     description: 'Interactive multi-view dashboards',
+    domain: 'Dashboards',
     components: [
       {
         id: 'brfss-dashboard-v1',

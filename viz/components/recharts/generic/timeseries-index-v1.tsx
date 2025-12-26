@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   LineChart,
   Line,
@@ -15,7 +15,6 @@ import {
 } from 'recharts';
 import { Button } from "@/viz/ui/button";
 import { Grid3X3 } from 'lucide-react';
-import { useTheme } from 'next-themes';
 
 type TimeRange = '1Y' | '2Y' | '5Y' | 'MAX';
 
@@ -56,14 +55,20 @@ interface IndexChartProps {
   series2: DataSeries;
 }
 
-interface TooltipProps {
+interface TooltipPayloadEntry {
+  dataKey: string;
+  value: number;
+  payload: ChartDataPoint;
+}
+
+interface CustomTooltipProps {
   active?: boolean;
-  payload?: Array<{
-    dataKey: string;
-    value: number;
-    payload: ChartDataPoint;
-  }>;
+  payload?: TooltipPayloadEntry[];
   label?: string;
+  series1Title: string;
+  series2Title: string;
+  colors: { series1: string; series2: string };
+  formatDateFn: (str: string) => string;
 }
 
 interface SeriesComparisonProps {
@@ -72,6 +77,23 @@ interface SeriesComparisonProps {
   title?: string;
   description?: string;
 }
+
+const recessionPeriods: RecessionPeriod[] = [
+  { start: "1960-04-01", end: "1961-02-01" },
+  { start: "1969-12-01", end: "1970-11-01" },
+  { start: "1973-11-01", end: "1975-03-01" },
+  { start: "1980-01-01", end: "1980-07-01" },
+  { start: "1981-07-01", end: "1982-11-01" },
+  { start: "1990-07-01", end: "1991-03-01" },
+  { start: "2001-03-01", end: "2001-11-01" },
+  { start: "2007-12-01", end: "2009-06-01" },
+  { start: "2020-02-01", end: "2020-04-01" }
+];
+
+const colors = {
+  series1: 'var(--chart-1)',
+  series2: 'var(--chart-2)',
+};
 
 const TimeRangeButton: React.FC<TimeRangeButtonProps> = ({ active, onClick, children }) => (
   <Button
@@ -84,28 +106,51 @@ const TimeRangeButton: React.FC<TimeRangeButtonProps> = ({ active, onClick, chil
   </Button>
 );
 
+const CustomTooltip: React.FC<CustomTooltipProps> = React.memo(({
+  active,
+  payload,
+  label,
+  series1Title,
+  series2Title,
+  colors,
+  formatDateFn
+}) => {
+  if (active && payload && payload.length && label) {
+    return (
+      <div className="bg-popover/95 backdrop-blur-sm border border-border shadow-2xl rounded-xl p-4 min-w-[220px]">
+        <p className="font-bold text-foreground mb-3 pb-2 border-b border-border">{formatDateFn(label)}</p>
+        <div className="space-y-2">
+          {payload.map((entry) => {
+            const color = entry.dataKey === series1Title ? colors.series1 : colors.series2;
+            return (
+              <div key={entry.dataKey} className="flex justify-between items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }}></span>
+                  <span className="text-muted-foreground text-sm font-medium truncate max-w-[120px]">{entry.dataKey}:</span>
+                </div>
+                <span className="font-mono font-bold text-sm" style={{ color: color }}>
+                  {entry.value >= 0 ? '+' : ''}{entry.value.toFixed(2)}%
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+  return null;
+});
+
+CustomTooltip.displayName = 'CustomTooltip';
+
+const legendFormatter = (value: string) => (
+  <span className="text-xs font-bold text-foreground/80 lowercase tracking-wider ml-1">{value}</span>
+);
+
 const IndexChart: React.FC<IndexChartProps> = ({ series1, series2 }) => {
   const [timeRange, setTimeRange] = useState<TimeRange>('MAX');
-  const [showRecessions, setShowRecessions] = useState(true);
+  const [showRecessions] = useState(true);
   const [brushDomain, setBrushDomain] = useState<{ start: number; end: number } | null>(null);
-  const { theme } = useTheme();
-
-  const colors = {
-    series1: 'var(--chart-1)',
-    series2: 'var(--chart-2)',
-  };
-
-  const recessionPeriods: RecessionPeriod[] = [
-    { start: "1960-04-01", end: "1961-02-01" },
-    { start: "1969-12-01", end: "1970-11-01" },
-    { start: "1973-11-01", end: "1975-03-01" },
-    { start: "1980-01-01", end: "1980-07-01" },
-    { start: "1981-07-01", end: "1982-11-01" },
-    { start: "1990-07-01", end: "1991-03-01" },
-    { start: "2001-03-01", end: "2001-11-01" },
-    { start: "2007-12-01", end: "2009-06-01" },
-    { start: "2020-02-01", end: "2020-04-01" }
-  ];
 
   const formatSeriesData = (series: DataSeries) => {
     return series.observations.map(obs => ({
@@ -161,7 +206,7 @@ const IndexChart: React.FC<IndexChartProps> = ({ series1, series2 }) => {
 
   const timeRanges: TimeRange[] = ['1Y', '2Y', '5Y', 'MAX'];
 
-  const formatDate = (str: string): string => {
+  const formatDate = useCallback((str: string): string => {
     const date = new Date(str);
     if (timeRange === 'MAX') {
       return date.getFullYear().toString();
@@ -169,9 +214,9 @@ const IndexChart: React.FC<IndexChartProps> = ({ series1, series2 }) => {
     const month = date.toLocaleString('default', { month: 'short' });
     const year = date.getFullYear();
     return `${month} ${year}`;
-  };
+  }, [timeRange]);
 
-  const handleBrushChange = (domain: any) => {
+  const handleBrushChange = (domain: { startIndex?: number; endIndex?: number } | null) => {
     if (domain && domain.startIndex !== undefined && domain.endIndex !== undefined) {
       setBrushDomain({
         start: domain.startIndex,
@@ -180,32 +225,15 @@ const IndexChart: React.FC<IndexChartProps> = ({ series1, series2 }) => {
     }
   };
 
-  const CustomTooltip: React.FC<TooltipProps> = ({ active, payload, label }) => {
-    if (active && payload && payload.length && label) {
-      return (
-        <div className="bg-popover/95 backdrop-blur-sm border border-border shadow-2xl rounded-xl p-4 min-w-[220px] animate-in fade-in zoom-in-95 duration-200">
-          <p className="font-bold text-foreground mb-3 pb-2 border-b border-border">{formatDate(label)}</p>
-          <div className="space-y-2">
-            {payload.map((entry) => {
-              const color = entry.dataKey === series1.title ? colors.series1 : colors.series2;
-              return (
-                <div key={entry.dataKey} className="flex justify-between items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }}></span>
-                    <span className="text-muted-foreground text-sm font-medium truncate max-w-[120px]">{entry.dataKey}:</span>
-                  </div>
-                  <span className="font-mono font-bold text-sm" style={{ color: color }}>
-                    {entry.value >= 0 ? '+' : ''}{entry.value.toFixed(2)}%
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
+  const tooltipContent = useCallback((props: { active?: boolean; payload?: TooltipPayloadEntry[]; label?: string }) => (
+    <CustomTooltip
+      {...props}
+      series1Title={series1.title}
+      series2Title={series2.title}
+      colors={colors}
+      formatDateFn={formatDate}
+    />
+  ), [series1.title, series2.title, formatDate]);
 
   return (
     <div className="w-full bg-card text-card-foreground border border-border rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300">
@@ -240,9 +268,7 @@ const IndexChart: React.FC<IndexChartProps> = ({ series1, series2 }) => {
               height={40}
               iconType="circle"
               iconSize={8}
-              formatter={(value) => (
-                <span className="text-xs font-bold text-foreground/80 lowercase tracking-wider ml-1">{value}</span>
-              )}
+              formatter={legendFormatter}
             />
 
             <XAxis
@@ -264,7 +290,7 @@ const IndexChart: React.FC<IndexChartProps> = ({ series1, series2 }) => {
               tick={{ fill: 'var(--muted-foreground)', fontSize: 11, fontWeight: 500 }}
             />
 
-            <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--border)', strokeWidth: 1 }} />
+            <Tooltip content={tooltipContent} cursor={{ stroke: 'var(--border)', strokeWidth: 1 }} />
 
             {showRecessions && recessionPeriods.map((period, index) => (
               <ReferenceArea
@@ -278,24 +304,22 @@ const IndexChart: React.FC<IndexChartProps> = ({ series1, series2 }) => {
             ))}
 
             <Line
-              type="monotone"
+              type="linear"
               dataKey={series1.title}
               stroke={colors.series1}
-              strokeWidth={3}
+              strokeWidth={1}
               dot={false}
-              activeDot={{ r: 6, strokeWidth: 0, fill: colors.series1 }}
-              isAnimationActive={true}
-              animationDuration={1500}
+              activeDot={{ r: 5, strokeWidth: 0, fill: colors.series1 }}
+              isAnimationActive={false}
             />
             <Line
-              type="monotone"
+              type="linear"
               dataKey={series2.title}
               stroke={colors.series2}
-              strokeWidth={3}
+              strokeWidth={1}
               dot={false}
-              activeDot={{ r: 6, strokeWidth: 0, fill: colors.series2 }}
-              isAnimationActive={true}
-              animationDuration={1500}
+              activeDot={{ r: 5, strokeWidth: 0, fill: colors.series2 }}
+              isAnimationActive={false}
             />
 
             <Brush
@@ -310,8 +334,8 @@ const IndexChart: React.FC<IndexChartProps> = ({ series1, series2 }) => {
               travellerWidth={8}
             >
               <LineChart>
-                <Line type="monotone" dataKey={series1.title} stroke={colors.series1} strokeWidth={1} dot={false} />
-                <Line type="monotone" dataKey={series2.title} stroke={colors.series2} strokeWidth={1} dot={false} />
+                <Line type="linear" dataKey={series1.title} stroke={colors.series1} strokeWidth={1} dot={false} />
+                <Line type="linear" dataKey={series2.title} stroke={colors.series2} strokeWidth={1} dot={false} />
               </LineChart>
             </Brush>
           </LineChart>
@@ -334,7 +358,6 @@ const IndexChart: React.FC<IndexChartProps> = ({ series1, series2 }) => {
 const SeriesComparison: React.FC<SeriesComparisonProps> = ({
   series1,
   series2,
-  title = "Series Comparison",
   description
 }) => {
   return (

@@ -1,9 +1,8 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Button } from "@/viz/ui/button";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea, Legend, Brush } from 'recharts';
-import { useTheme } from 'next-themes';
 import { TooltipProps } from 'recharts';
 import { NameType, ValueType } from 'recharts/types/component/DefaultTooltipContent';
 
@@ -36,16 +35,13 @@ interface DualAxisChartProps {
 
 type TimeRangeType = '1Y' | '2Y' | '5Y' | 'MAX';
 
-const TimeRangeButton: React.FC<TimeRangeButtonProps> = ({ active, onClick, children }) => (
-  <Button
-    variant={active ? "secondary" : "ghost"}
-    size="sm"
-    onClick={onClick}
-    className={`h-8 px-3 text-xs font-bold transition-all ${active ? 'shadow-sm bg-background border border-border' : 'text-muted-foreground hover:text-foreground'}`}
-  >
-    {children}
-  </Button>
-);
+interface CustomTooltipProps extends TooltipProps<ValueType, NameType> {
+  series1Name: string;
+  series2Name: string;
+  series1Unit?: string;
+  series2Unit?: string;
+  formatDateFn: (str: string) => string;
+}
 
 const recessionPeriods: RecessionPeriod[] = [
   { start: "1960-04-01", end: "1961-02-01" },
@@ -59,6 +55,64 @@ const recessionPeriods: RecessionPeriod[] = [
   { start: "2020-02-01", end: "2020-04-01" }
 ];
 
+const colors = {
+  series1: 'var(--chart-1)',
+  series2: 'var(--chart-2)',
+  recession: 'var(--muted-foreground)'
+};
+
+const TimeRangeButton: React.FC<TimeRangeButtonProps> = ({ active, onClick, children }) => (
+  <Button
+    variant={active ? "secondary" : "ghost"}
+    size="sm"
+    onClick={onClick}
+    className={`h-8 px-3 text-xs font-bold transition-all ${active ? 'shadow-sm bg-background border border-border' : 'text-muted-foreground hover:text-foreground'}`}
+  >
+    {children}
+  </Button>
+);
+
+const CustomTooltip: React.FC<CustomTooltipProps> = React.memo(({
+  active,
+  payload,
+  label,
+  series1Name,
+  series2Name,
+  series1Unit,
+  series2Unit,
+  formatDateFn
+}) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-popover/95 backdrop-blur-sm border border-border shadow-2xl rounded-xl p-4 min-w-[220px]">
+        <p className="font-bold text-foreground mb-3 pb-2 border-b border-border">{formatDateFn(label || '')}</p>
+        <div className="space-y-2">
+          {payload.map((entry) => (
+            <div key={entry.dataKey} className="flex justify-between items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }}></span>
+                <span className="text-muted-foreground text-sm font-medium">{entry.name}:</span>
+              </div>
+              <span className="font-mono font-bold text-sm" style={{ color: entry.color }}>
+                {typeof entry.value === 'number'
+                  ? `${entry.value.toFixed(1)}${entry.name === series1Name ? (series1Unit || '') : (series2Unit || '')}`
+                  : 'N/A'}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  return null;
+});
+
+CustomTooltip.displayName = 'CustomTooltip';
+
+const legendFormatter = (value: string) => (
+  <span className="text-xs font-bold text-foreground/80 lowercase tracking-wider ml-1">{value}</span>
+);
+
 const DualAxisChart: React.FC<DualAxisChartProps> = ({
   series1Data,
   series2Data,
@@ -70,16 +124,9 @@ const DualAxisChart: React.FC<DualAxisChartProps> = ({
   description
 }) => {
   const [timeRange, setTimeRange] = useState<TimeRangeType>('MAX');
-  const [showRecessions, setShowRecessions] = useState(true);
-  const { theme } = useTheme();
+  const [showRecessions] = useState(true);
 
-  const colors = {
-    series1: 'var(--chart-1)',
-    series2: 'var(--chart-2)',
-    recession: 'var(--muted-foreground)'
-  };
-
-  const filteredData = React.useMemo(() => {
+  const filteredData = useMemo(() => {
     if (!series1Data?.length || !series2Data?.length) return [];
 
     const latestDate1 = new Date(series1Data[series1Data.length - 1].date);
@@ -126,7 +173,7 @@ const DualAxisChart: React.FC<DualAxisChartProps> = ({
 
   const timeRanges: TimeRangeType[] = ['1Y', '2Y', '5Y', 'MAX'];
 
-  const formatDate = (str: string): string => {
+  const formatDate = useCallback((str: string): string => {
     const date = new Date(str);
     if (timeRange === 'MAX') {
       return date.getFullYear().toString();
@@ -134,39 +181,9 @@ const DualAxisChart: React.FC<DualAxisChartProps> = ({
     const month = date.toLocaleString('default', { month: 'short' });
     const year = date.getFullYear();
     return `${month} ${year}`;
-  };
+  }, [timeRange]);
 
-  const CustomTooltip = ({
-    active,
-    payload,
-    label
-  }: TooltipProps<ValueType, NameType>) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-popover/95 backdrop-blur-sm border border-border shadow-2xl rounded-xl p-4 min-w-[220px] animate-in fade-in zoom-in-95 duration-200">
-          <p className="font-bold text-foreground mb-3 pb-2 border-b border-border">{formatDate(label || '')}</p>
-          <div className="space-y-2">
-            {payload.map((entry) => (
-              <div key={entry.dataKey} className="flex justify-between items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }}></span>
-                  <span className="text-muted-foreground text-sm font-medium">{entry.name}:</span>
-                </div>
-                <span className="font-mono font-bold text-sm" style={{ color: entry.color }}>
-                  {typeof entry.value === 'number'
-                    ? `${entry.value.toFixed(1)}${entry.name === series1Name ? (series1Unit || '') : (series2Unit || '')}`
-                    : 'N/A'}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
-
-  const yAxis1Domain = React.useMemo(() => {
+  const yAxis1Domain = useMemo(() => {
     if (!filteredData.length) return [0, 0];
     const values = filteredData.map(item => Number(item[series1Name])).filter((value): value is number =>
       value !== undefined && !isNaN(value)
@@ -177,7 +194,7 @@ const DualAxisChart: React.FC<DualAxisChartProps> = ({
     return [Math.max(0, min - margin), max + margin];
   }, [filteredData, series1Name]);
 
-  const yAxis2Domain = React.useMemo(() => {
+  const yAxis2Domain = useMemo(() => {
     if (!filteredData.length) return [0, 0];
     const values = filteredData.map(item => Number(item[series2Name])).filter((value): value is number =>
       value !== undefined && !isNaN(value)
@@ -188,6 +205,16 @@ const DualAxisChart: React.FC<DualAxisChartProps> = ({
     return [Math.max(0, min - margin), max + margin];
   }, [filteredData, series2Name]);
 
+  const tooltipContent = useCallback((props: TooltipProps<ValueType, NameType>) => (
+    <CustomTooltip
+      {...props}
+      series1Name={series1Name}
+      series2Name={series2Name}
+      series1Unit={series1Unit}
+      series2Unit={series2Unit}
+      formatDateFn={formatDate}
+    />
+  ), [series1Name, series2Name, series1Unit, series2Unit, formatDate]);
 
   return (
     <div className="w-full bg-card text-card-foreground border border-border rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300">
@@ -220,9 +247,7 @@ const DualAxisChart: React.FC<DualAxisChartProps> = ({
               height={40}
               iconType="circle"
               iconSize={8}
-              formatter={(value) => (
-                <span className="text-xs font-bold text-foreground/80 lowercase tracking-wider ml-1">{value}</span>
-              )}
+              formatter={legendFormatter}
             />
 
             <XAxis
@@ -269,7 +294,7 @@ const DualAxisChart: React.FC<DualAxisChartProps> = ({
               }}
             />
 
-            <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--border)', strokeWidth: 1 }} />
+            <Tooltip content={tooltipContent} cursor={{ stroke: 'var(--border)', strokeWidth: 1 }} />
 
             {showRecessions && recessionPeriods.map((period, index) => (
               <ReferenceArea
@@ -284,25 +309,23 @@ const DualAxisChart: React.FC<DualAxisChartProps> = ({
 
             <Line
               yAxisId="left"
-              type="monotone"
+              type="linear"
               dataKey={series1Name}
               stroke={colors.series1}
-              strokeWidth={3}
+              strokeWidth={1}
               dot={false}
-              activeDot={{ r: 6, strokeWidth: 0, fill: colors.series1 }}
-              isAnimationActive={true}
-              animationDuration={1500}
+              activeDot={{ r: 5, strokeWidth: 0, fill: colors.series1 }}
+              isAnimationActive={false}
             />
             <Line
               yAxisId="right"
-              type="monotone"
+              type="linear"
               dataKey={series2Name}
               stroke={colors.series2}
-              strokeWidth={3}
+              strokeWidth={1}
               dot={false}
-              activeDot={{ r: 6, strokeWidth: 0, fill: colors.series2 }}
-              isAnimationActive={true}
-              animationDuration={1500}
+              activeDot={{ r: 5, strokeWidth: 0, fill: colors.series2 }}
+              isAnimationActive={false}
             />
 
             <Brush

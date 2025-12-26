@@ -38,10 +38,18 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
     'composite/dashboards': <Layout className="w-5 h-5" />,
 };
 
+const DOMAIN_ORDER = ['Generic', 'Health', 'Survey', 'Geographic', 'Statistical', 'Dashboards'] as const;
+
 export function Sidebar() {
     const pathname = usePathname();
     const [searchQuery, setSearchQuery] = useState('');
     const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+    const [mobileOpen, setMobileOpen] = useState(false);
+
+    // Close mobile menu when route changes
+    React.useEffect(() => {
+        setMobileOpen(false);
+    }, [pathname]);
 
     const toggleCategory = (category: string) => {
         setExpandedCategories(prev =>
@@ -66,13 +74,16 @@ export function Sidebar() {
         return acc;
     }, {} as typeof REGISTRY);
 
-    // Group by Library
-    const libraryGroups = Object.entries(filteredRegistry).reduce((acc, [key, category]) => {
-        const library = key.startsWith('recharts') ? 'Recharts' : key.startsWith('plot') ? 'Observable Plot' : 'Other';
-        if (!acc[library]) acc[library] = [];
-        acc[library].push({ key, ...category });
+    // Group by Domain
+    const domainGroups = Object.entries(filteredRegistry).reduce((acc, [key, category]) => {
+        const domain = category.domain;
+        if (!acc[domain]) acc[domain] = [];
+        acc[domain].push({ key, ...category });
         return acc;
     }, {} as Record<string, any[]>);
+
+    // Sort domains by predefined order
+    const sortedDomains = DOMAIN_ORDER.filter(domain => domainGroups[domain]);
 
     // Auto-expand categories when searching
     React.useEffect(() => {
@@ -82,15 +93,50 @@ export function Sidebar() {
     }, [searchQuery]);
 
     return (
-        <div className="w-64 bg-sidebar h-screen border-r border-sidebar-border flex flex-col overflow-hidden">
-            {/* Logo and Search */}
-            <div className="p-6 pb-0 space-y-6 shrink-0">
+        <>
+            {/* Mobile Header */}
+            <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-sidebar border-b border-sidebar-border p-4 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                     <div className="p-2 bg-primary rounded-lg shadow-sm">
                         <BarChart3 className="w-5 h-5 text-primary-foreground" />
                     </div>
                     <span className="font-bold text-lg tracking-tight text-foreground">Evidence</span>
                 </div>
+                <button
+                    onClick={() => setMobileOpen(!mobileOpen)}
+                    className="p-2 rounded-md hover:bg-secondary transition-colors"
+                >
+                    {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                </button>
+            </div>
+
+            {/* Mobile Overlay */}
+            <AnimatePresence>
+                {mobileOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setMobileOpen(false)}
+                        className="md:hidden fixed inset-0 z-30 bg-black/50"
+                    />
+                )}
+            </AnimatePresence>
+
+            {/* Sidebar */}
+            <div className={cn(
+                "w-64 bg-sidebar h-screen sticky top-0 border-r border-sidebar-border flex flex-col overflow-hidden z-40",
+                "max-md:fixed max-md:top-0 max-md:left-0 max-md:pt-16 max-md:transition-transform max-md:duration-300",
+                mobileOpen ? "max-md:translate-x-0" : "max-md:-translate-x-full"
+            )}>
+                {/* Logo and Search */}
+                <div className="p-6 pb-0 space-y-6 shrink-0">
+                    <div className="flex items-center space-x-3 max-md:hidden">
+                        <div className="p-2 bg-primary rounded-lg shadow-sm">
+                            <BarChart3 className="w-5 h-5 text-primary-foreground" />
+                        </div>
+                        <span className="font-bold text-lg tracking-tight text-foreground">Evidence</span>
+                    </div>
 
                 <div className="relative group">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground group-focus-within:text-foreground transition-colors" />
@@ -106,16 +152,16 @@ export function Sidebar() {
 
             {/* Categories - Scrollable */}
             <nav className="flex-1 px-3 space-y-8 py-8 overflow-y-auto custom-scrollbar">
-                {Object.entries(libraryGroups).map(([library, categories]) => (
-                    <div key={library} className="space-y-3">
+                {sortedDomains.map((domain) => (
+                    <div key={domain} className="space-y-3">
                         <div className="px-3 flex items-center justify-between">
                             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50">
-                                {library}
+                                {domain}
                             </span>
                         </div>
 
                         <div className="space-y-0.5">
-                            {categories.map((category) => {
+                            {domainGroups[domain].map((category) => {
                                 const key = category.key;
                                 const isExpanded = expandedCategories.includes(key);
                                 const isActive = pathname.includes(key);
@@ -206,5 +252,6 @@ export function Sidebar() {
                 </div>
             </div>
         </div>
+        </>
     );
 }
