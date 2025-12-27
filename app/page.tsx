@@ -6,21 +6,47 @@ import { getCachedComponentData } from '@/lib/data-fetcher';
 
 export default async function Home() {
   const totalComponents = Object.values(REGISTRY).reduce(
-    (sum, category: any) => sum + category.components.length,
+    (sum, category) => {
+      const componentCount = (category.components || []).length;
+      const familyCount = (category.families || []).length;
+      return sum + componentCount + familyCount;
+    },
     0
   );
 
   // Fetch data for all components in parallel (cached with 'use cache')
   const categories = await Promise.all(
     Object.entries(REGISTRY).map(async ([categoryPath, category]) => {
+      // Process families (show as single items linking to family page)
+      const familiesWithData = await Promise.all(
+        (category.families || []).map(async (family) => {
+          const path = `${categoryPath}/${family.id}`;
+          // Use first variant's sample data for preview
+          const initialData = await getCachedComponentData(`${categoryPath}/${family.id}-${family.variants[0].id}-v1`);
+          return {
+            id: family.id,
+            name: family.name,
+            description: family.description,
+            path,
+            initialData,
+          };
+        })
+      );
+
+      // Process standalone components
       const componentsWithData = await Promise.all(
-        category.components.map(async (component) => {
+        (category.components || []).map(async (component) => {
           const path = `${categoryPath}/${component.id}`;
           const initialData = await getCachedComponentData(path);
           return { ...component, path, initialData };
         })
       );
-      return { ...category, categoryPath, components: componentsWithData };
+
+      return {
+        ...category,
+        categoryPath,
+        components: [...familiesWithData, ...componentsWithData],
+      };
     })
   );
 

@@ -8,11 +8,19 @@ export interface ComponentMeta {
   sampleData: string;
 }
 
+export interface FamilyMeta {
+  id: string;
+  name: string;
+  description: string;
+  variants: ComponentMeta[];
+}
+
 export interface CategoryMeta {
   title: string;
   description: string;
   domain: 'Generic' | 'Health' | 'Survey' | 'Geographic' | 'Statistical' | 'Dashboards';
-  components: ComponentMeta[];
+  families?: FamilyMeta[];
+  components?: ComponentMeta[];
 }
 
 export const REGISTRY: Record<string, CategoryMeta> = {
@@ -20,30 +28,50 @@ export const REGISTRY: Record<string, CategoryMeta> = {
     title: 'Generic Charts',
     description: 'Reusable chart components for any dataset',
     domain: 'Generic',
-    components: [
+    families: [
       {
-        id: 'timeseries-basic-v1',
-        name: 'Time Series (Basic)',
-        description: 'Simple time series line chart',
-        sampleData: 'housing.json',
+        id: 'timeseries',
+        name: 'Time Series',
+        description: 'Line charts for temporal data with recession overlays and time range controls',
+        variants: [
+          {
+            id: 'basic',
+            name: 'Basic',
+            description: 'Simple time series line chart',
+            sampleData: 'housing.json',
+          },
+          {
+            id: 'dual-axis',
+            name: 'Dual Axis',
+            description: 'Time series with two Y-axes for different scales',
+            sampleData: 'housing.json',
+          },
+          {
+            id: 'index',
+            name: 'Index Comparison',
+            description: 'Normalized index comparison (rebased to 100)',
+            sampleData: 'housing.json',
+          },
+        ],
       },
       {
-        id: 'timeseries-dual-axis-v1',
-        name: 'Dual Axis Chart',
-        description: 'Time series with two Y-axes for different scales',
-        sampleData: 'housing.json',
-      },
-      {
-        id: 'timeseries-index-v1',
-        name: 'Index Comparison',
-        description: 'Normalized index comparison (rebased to 100)',
-        sampleData: 'housing.json',
-      },
-      {
-        id: 'demographic-breakdown-v1',
-        name: 'Demographic Breakdown',
-        description: 'Switchable chart (scatter/line/bar) with confidence intervals for demographic data',
-        sampleData: 'obesity.json',
+        id: 'demographic',
+        name: 'Demographic Charts',
+        description: 'Visualizations for demographic breakdowns across age, income, education, and other groups',
+        variants: [
+          {
+            id: 'breakdown',
+            name: 'Switchable Chart',
+            description: 'Switchable chart (scatter/line/bar) with confidence intervals',
+            sampleData: 'obesity.json',
+          },
+          {
+            id: 'panel',
+            name: 'Multi-Panel',
+            description: 'Side-by-side panel layout for each demographic category',
+            sampleData: 'https://ontopic-public-data.t3.storage.dev/cdc-data/brfss_state/examples/DRNKANY5_us_median.json',
+          },
+        ],
       },
     ],
   },
@@ -51,18 +79,25 @@ export const REGISTRY: Record<string, CategoryMeta> = {
     title: 'BRFSS (Health Surveillance)',
     description: 'Components for CDC BRFSS health survey data',
     domain: 'Health',
-    components: [
+    families: [
       {
-        id: 'state-bar-v1',
+        id: 'state-bar',
         name: 'State Bar Chart',
-        description: 'Horizontal bar chart for state-level comparisons',
-        sampleData: 'state-visualization-data.json',
-      },
-      {
-        id: 'state-bar-sortable-v1',
-        name: 'State Bar Chart (Sortable)',
-        description: 'Interactive sortable state bar chart',
-        sampleData: 'state-visualization-data.json',
+        description: 'Horizontal bar charts for state-level health indicator comparisons',
+        variants: [
+          {
+            id: 'sortable',
+            name: 'Sortable (Recharts)',
+            description: 'Interactive sortable horizontal bar chart',
+            sampleData: 'state-visualization-data.json',
+          },
+          {
+            id: 'plot',
+            name: 'Ordered (Observable Plot)',
+            description: 'Clean ordered horizontal bar chart',
+            sampleData: 'https://ontopic-public-data.t3.storage.dev/cdc-data/brfss_state/examples/DRNKANY5_state_map.json',
+          },
+        ],
       },
     ],
   },
@@ -155,78 +190,62 @@ export const REGISTRY: Record<string, CategoryMeta> = {
       },
     ],
   },
-  'plot/brfss': {
-    title: 'BRFSS (Observable Plot)',
-    description: 'CDC BRFSS health survey visualizations using Observable Plot',
-    domain: 'Health',
-    components: [
-      {
-        id: 'state-bar-v1',
-        name: 'State Bar Chart',
-        description: 'Ordered horizontal bar chart for state-level health indicators',
-        sampleData: 'https://ontopic-public-data.t3.storage.dev/cdc-data/brfss_state/examples/DRNKANY5_state_map.json',
-      },
-    ],
-  },
-  'plot/timeseries': {
-    title: 'Time Series (Observable Plot)',
-    description: 'Time series visualizations using Observable Plot',
-    domain: 'Generic',
-    components: [
-      {
-        id: 'multiline-v1',
-        name: 'Multi-Line Chart',
-        description: 'Multi-series line chart for comparing trends across categories',
-        sampleData: 'zillowmultiline.json',
-      },
-    ],
-  },
   'plot/stats': {
     title: 'Statistical Visualizations',
     description: 'Statistical analysis charts using Observable Plot',
     domain: 'Statistical',
+    families: [
+      {
+        id: 'odds-ratio',
+        name: 'Odds Ratio Charts',
+        description: 'Statistical visualizations for odds ratios with confidence intervals',
+        variants: [
+          {
+            id: 'basic',
+            name: 'Basic',
+            description: 'Standard odds ratio visualization with confidence intervals',
+            sampleData: 'odds-ratio-data.json',
+          },
+          {
+            id: 'forest',
+            name: 'Forest Plot',
+            description: 'Advanced forest plot with enhanced statistical features',
+            sampleData: 'odds-ratio-data.json',
+          },
+          {
+            id: 'dotplot',
+            name: 'Precision-Weighted',
+            description: 'Dot plot where marker size reflects statistical precision',
+            sampleData: 'odds-ratio-data.json',
+          },
+        ],
+      },
+      {
+        id: 'density',
+        name: 'Density Plots',
+        description: 'Distribution visualizations for continuous variables',
+        variants: [
+          {
+            id: 'basic',
+            name: 'Basic',
+            description: 'Single variable density distribution curve',
+            sampleData: 'county_sample.json',
+          },
+          {
+            id: 'overlay',
+            name: 'Overlay',
+            description: 'Overlaid density curves comparing distributions by group',
+            sampleData: 'health-obesity-diabetes.json',
+          },
+        ],
+      },
+    ],
     components: [
-      {
-        id: 'odds-ratio-basic-v1',
-        name: 'Odds Ratio (Basic)',
-        description: 'Standard odds ratio visualization with confidence intervals',
-        sampleData: 'odds-ratio-data.json',
-      },
-      {
-        id: 'odds-ratio-forest-v1',
-        name: 'Odds Ratio (Forest Plot)',
-        description: 'Advanced forest plot with enhanced statistical features',
-        sampleData: 'odds-ratio-data.json',
-      },
-      {
-        id: 'odds-ratio-dotplot-v1',
-        name: 'Odds Ratio (Precision-Weighted)',
-        description: 'Dot plot where marker size reflects statistical precision',
-        sampleData: 'odds-ratio-data.json',
-      },
       {
         id: 'correlation-heatmap-v1',
         name: 'Correlation Heatmap',
         description: 'Lower-triangle correlation matrix with color coding',
         sampleData: 'correlation-data.json',
-      },
-      {
-        id: 'density-overlay-v1',
-        name: 'Density Overlay Plot',
-        description: 'Overlaid density curves comparing distributions by group',
-        sampleData: 'health-obesity-diabetes.json',
-      },
-      {
-        id: 'density-basic-v1',
-        name: 'Density Plot (Basic)',
-        description: 'Single variable density distribution curve',
-        sampleData: 'county_sample.json',
-      },
-      {
-        id: 'demographic-panel-v1',
-        name: 'Demographic Panel',
-        description: 'Multi-panel bar charts showing demographic breakdowns',
-        sampleData: 'https://ontopic-public-data.t3.storage.dev/cdc-data/brfss_state/examples/DRNKANY5_us_median.json',
       },
       {
         id: 'split-bar-v1',
@@ -251,16 +270,31 @@ export const REGISTRY: Record<string, CategoryMeta> = {
   },
 };
 
-// Helper to get all components as flat array
+// Helper to get all components as flat array (includes family variants)
 export function getAllComponents() {
   const all: (ComponentMeta & { category: string; path: string })[] = [];
   for (const [category, meta] of Object.entries(REGISTRY)) {
-    for (const component of meta.components) {
-      all.push({
-        ...component,
-        category,
-        path: `${category}/${component.id}`,
-      });
+    // Add standalone components
+    if (meta.components) {
+      for (const component of meta.components) {
+        all.push({
+          ...component,
+          category,
+          path: `${category}/${component.id}`,
+        });
+      }
+    }
+    // Add family variants
+    if (meta.families) {
+      for (const family of meta.families) {
+        for (const variant of family.variants) {
+          all.push({
+            ...variant,
+            category,
+            path: `${category}/${family.id}-${variant.id}-v1`,
+          });
+        }
+      }
     }
   }
   return all;
@@ -269,9 +303,36 @@ export function getAllComponents() {
 // Helper to find component by path
 export function getComponentByPath(path: string) {
   for (const [category, meta] of Object.entries(REGISTRY)) {
-    for (const component of meta.components) {
-      if (`${category}/${component.id}` === path) {
-        return { ...component, category, categoryMeta: meta };
+    // Check standalone components
+    if (meta.components) {
+      for (const component of meta.components) {
+        if (`${category}/${component.id}` === path) {
+          return { ...component, category, categoryMeta: meta };
+        }
+      }
+    }
+    // Check family variants
+    if (meta.families) {
+      for (const family of meta.families) {
+        for (const variant of family.variants) {
+          if (`${category}/${family.id}-${variant.id}-v1` === path) {
+            return { ...variant, category, categoryMeta: meta, family };
+          }
+        }
+      }
+    }
+  }
+  return null;
+}
+
+// Helper to find family by path
+export function getFamilyByPath(path: string) {
+  for (const [category, meta] of Object.entries(REGISTRY)) {
+    if (meta.families) {
+      for (const family of meta.families) {
+        if (`${category}/${family.id}` === path) {
+          return { ...family, category, categoryMeta: meta };
+        }
       }
     }
   }

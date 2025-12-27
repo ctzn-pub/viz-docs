@@ -5,21 +5,17 @@
 
 export const DATA_TRANSFORMS: Record<string, (rawData: any) => any> = {
     'recharts/generic/timeseries-basic-v1': (rawData) => {
-        if (!rawData?.series?.[0]?.observations) return { data: [], metadata: {}, dataPointMetadata: [] };
+        if (!rawData?.series?.[0]?.observations) return { data: [], seriesName: '', unit: '' };
         const series = rawData.series[0];
         const data = series.observations.map((o: any) => ({
-            year: o.date?.substring(0, 4) || String(o.year),
+            date: o.date,
             value: parseFloat(o.value),
         })).filter((d: any) => !isNaN(d.value));
         return {
             data,
-            metadata: {
-                type: 'timeseries',
-                title: series.title || rawData.category,
-                subtitle: series.units || '',
-                source: { id: 'fred', name: 'Federal Reserve Economic Data' }
-            },
-            dataPointMetadata: [{ id: 'value', name: 'Value', type: 'number' }]
+            seriesName: series.title || rawData.category || 'Value',
+            unit: series.units || '',
+            title: rawData.category,
         };
     },
     'recharts/generic/timeseries-dual-axis-v1': (rawData) => {
