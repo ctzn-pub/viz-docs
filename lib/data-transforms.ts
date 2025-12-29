@@ -44,6 +44,9 @@ export const DATA_TRANSFORMS: Record<string, (rawData: any) => any> = {
     'recharts/generic/demographic-breakdown-v1': (rawData) => ({
         data: rawData
     }),
+    'recharts/generic/histogram-v1': (rawData) => ({
+        data: Array.isArray(rawData) ? rawData : []
+    }),
     'recharts/ess/scatter-regression-v1': (rows) => {
         if (!Array.isArray(rows)) return { data: [] };
         const normalizeReligion = (s: string | undefined) => {

@@ -101,16 +101,29 @@ export const REGISTRY: Record<string, CategoryMeta> = {
       },
     ],
   },
-  'recharts/gss': {
+  'gss': {
     title: 'GSS (General Social Survey)',
     description: 'Components for GSS polling and opinion data',
     domain: 'Survey',
-    components: [
+    families: [
       {
-        id: 'timetrend-demo-v1',
-        name: 'Time Trend Demo',
-        description: 'Multi-series time trend with presidential term backgrounds and confidence intervals',
-        sampleData: 'timetrend-demo-data.json',
+        id: 'opinion-trends',
+        name: 'Opinion Trends',
+        description: 'Time trend visualizations with presidential term backgrounds and confidence intervals',
+        variants: [
+          {
+            id: 'recharts',
+            name: 'Recharts',
+            description: 'Interactive time trend built with Recharts',
+            sampleData: 'timetrend-demo-data.json',
+          },
+          {
+            id: 'plot',
+            name: 'Observable Plot',
+            description: 'Time trend built with Observable Plot',
+            sampleData: 'timetrend-demo-data.json',
+          },
+        ],
       },
     ],
   },
@@ -124,19 +137,6 @@ export const REGISTRY: Record<string, CategoryMeta> = {
         name: 'Scatter Plot with Regression',
         description: 'Scatter plot with OLS regression line',
         sampleData: 'ess_country_data.csv',
-      },
-    ],
-  },
-  'plot/gss': {
-    title: 'GSS (Observable Plot)',
-    description: 'General Social Survey visualizations using Observable Plot',
-    domain: 'Survey',
-    components: [
-      {
-        id: 'timetrend-demo-v1',
-        name: 'Time Trend Demo',
-        description: 'Multi-series time trend with presidential term backgrounds and confidence intervals',
-        sampleData: 'timetrend-demo-data.json',
       },
     ],
   },
@@ -163,30 +163,55 @@ export const REGISTRY: Record<string, CategoryMeta> = {
         description: 'County-level choropleth map',
         sampleData: 'county_sample.json',
       },
+      {
+        id: 'europe-map-v1',
+        name: 'Europe Map',
+        description: 'Choropleth map of European countries',
+        sampleData: 'europe_sample_map_data_gini.json',
+      },
+      {
+        id: 'zip-map-v1',
+        name: 'ZIP Code Map',
+        description: 'Dot density map of ZIP code health data',
+        sampleData: 'zip-health-data.json',
+      },
+      {
+        id: 'density-map-geo-v1',
+        name: 'Geographic Density Map',
+        description: 'Kernel density estimation map of geographic health data',
+        sampleData: 'zip-health-data.json',
+      },
     ],
   },
   'plot/health': {
     title: 'Health Visualizations',
     description: 'Health data analysis using Observable Plot',
     domain: 'Health',
-    components: [
+    families: [
       {
-        id: 'health-scatter-basic-v1',
-        name: 'Health Scatterplot (Basic)',
-        description: 'Basic scatter plot showing obesity vs diabetes correlation',
-        sampleData: 'health-obesity-diabetes.json',
-      },
-      {
-        id: 'health-scatter-regression-v1',
-        name: 'Health Scatterplot (Regression)',
-        description: 'Scatter plot with linear regression trend line',
-        sampleData: 'health-obesity-diabetes.json',
-      },
-      {
-        id: 'health-scatter-faceted-v1',
-        name: 'Health Scatterplot (Faceted)',
-        description: 'Faceted scatter plot by demographic category',
-        sampleData: 'health-obesity-diabetes.json',
+        id: 'scatterplots',
+        name: 'Scatterplots',
+        description: 'Scatter plots for examining relationships between health metrics',
+        variants: [
+          {
+            id: 'basic',
+            name: 'Basic',
+            description: 'Basic scatter plot showing obesity vs diabetes correlation',
+            sampleData: 'health-obesity-diabetes.json',
+          },
+          {
+            id: 'regression',
+            name: 'Regression',
+            description: 'Scatter plot with linear regression trend line',
+            sampleData: 'health-obesity-diabetes.json',
+          },
+          {
+            id: 'faceted',
+            name: 'Faceted',
+            description: 'Faceted scatter plot by demographic category',
+            sampleData: 'health-obesity-diabetes.json',
+          },
+        ],
       },
     ],
   },
@@ -236,6 +261,18 @@ export const REGISTRY: Record<string, CategoryMeta> = {
             name: 'Overlay',
             description: 'Overlaid density curves comparing distributions by group',
             sampleData: 'health-obesity-diabetes.json',
+          },
+          {
+            id: 'histogram',
+            name: 'Histogram',
+            description: 'Binned histogram with reference lines for mean/median',
+            sampleData: 'county_sample.json',
+          },
+          {
+            id: 'distribution',
+            name: 'Distribution',
+            description: 'Area + line distribution plot with reference line, using ZIP health data',
+            sampleData: 'zip-health-data.json',
           },
         ],
       },

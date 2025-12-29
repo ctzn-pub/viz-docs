@@ -21,6 +21,9 @@ const componentMap: Record<string, React.ComponentType<any>> = {
   'plot/geo/state-map-v1': dynamic(() => import('@/viz/components/plot/geo/state-map-v1')),
   'plot/geo/bubble-map-v1': dynamic(() => import('@/viz/components/plot/geo/bubble-map-v1')),
   'plot/geo/choropleth-v1': dynamic(() => import('@/viz/components/plot/geo/choropleth-v1')),
+  'plot/geo/europe-map-v1': dynamic(() => import('@/viz/components/plot/geo/europe-map-v1')),
+  'plot/geo/zip-map-v1': dynamic(() => import('@/viz/components/plot/geo/zip-map-v1')),
+  'plot/geo/density-map-geo-v1': dynamic(() => import('@/viz/components/plot/geo/density-map-geo-v1')),
   'plot/health/health-scatter-basic-v1': dynamic(() => import('@/viz/components/plot/health/health-scatter-basic-v1')),
   'plot/health/health-scatter-regression-v1': dynamic(() => import('@/viz/components/plot/health/health-scatter-regression-v1')),
   'plot/health/health-scatter-faceted-v1': dynamic(() => import('@/viz/components/plot/health/health-scatter-faceted-v1')),
@@ -30,6 +33,7 @@ const componentMap: Record<string, React.ComponentType<any>> = {
   'plot/stats/correlation-heatmap-v1': dynamic(() => import('@/viz/components/plot/stats/correlation-heatmap-v1')),
   'plot/stats/density-overlay-v1': dynamic(() => import('@/viz/components/plot/stats/density-overlay-v1')),
   'plot/stats/density-basic-v1': dynamic(() => import('@/viz/components/plot/stats/density-basic-v1')),
+  'plot/stats/distribution-v1': dynamic(() => import('@/viz/components/plot/stats/distribution-v1')),
   'plot/stats/demographic-panel-v1': dynamic(() => import('@/viz/components/plot/stats/demographic-panel-v1')),
   'plot/stats/split-bar-v1': dynamic(() => import('@/viz/components/plot/stats/split-bar-v1')),
   'plot/brfss/state-bar-v1': dynamic(() => import('@/viz/components/plot/brfss/state-bar-v1')),
@@ -313,6 +317,15 @@ export function ComponentPreview({ path, data, error }: ComponentPreviewProps) {
                 />
               );
             })()
+          ) : path === 'plot/geo/europe-map-v1' ? (
+            <Component
+              data={data as any[]}
+              title="Income Inequality in Europe"
+              subtitle="Gini coefficient by country"
+              valueLabel="Gini Coefficient"
+              width={800}
+              height={550}
+            />
           ) : (
             <Component data={data} />
           )}

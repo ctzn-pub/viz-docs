@@ -6,6 +6,7 @@ import { ExternalLink, Terminal, Code2, Activity, Database, ChevronDown } from '
 import { getSampleDataUrl, getGitHubUrl } from '@/lib/registry-data';
 import { getTransformForPath } from '@/lib/data-transforms';
 import { CopyButton } from '@/components/CopyButton';
+import { TableOfContents } from '@/components/TableOfContents';
 
 function LocalCopyButton({ text }: { text: string }) {
     return <CopyButton text={text} className="h-8 w-8" />;
@@ -203,60 +204,6 @@ function VariantSection({ variant }: { variant: VariantConfig }) {
     );
 }
 
-function TableOfContents() {
-    const [activeId, setActiveId] = useState<string>('');
-
-    useEffect(() => {
-        const scrollContainer = document.querySelector('main');
-
-        const observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting) {
-                        setActiveId(entry.target.id);
-                    }
-                });
-            },
-            {
-                root: scrollContainer,
-                rootMargin: '-20% 0% -60% 0%'
-            }
-        );
-
-        variants.forEach((variant) => {
-            const element = document.getElementById(variant.id);
-            if (element) observer.observe(element);
-        });
-
-        return () => observer.disconnect();
-    }, []);
-
-    return (
-        <nav className="space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50">
-                On this page
-            </span>
-            <ul className="space-y-1 pt-2">
-                {variants.map((variant) => (
-                    <li key={variant.id}>
-                        <a
-                            href={`#${variant.id}`}
-                            className={cn(
-                                "block py-1 text-sm transition-colors border-l-2 pl-3 -ml-px",
-                                activeId === variant.id
-                                    ? "border-primary text-foreground font-medium"
-                                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
-                            )}
-                        >
-                            {variant.name}
-                        </a>
-                    </li>
-                ))}
-            </ul>
-        </nav>
-    );
-}
-
 export default function DemographicChartsPage() {
     return (
         <div className="relative">
@@ -293,7 +240,7 @@ export default function DemographicChartsPage() {
 
             {/* Right sidebar - Table of Contents (fixed position) */}
             <aside className="hidden lg:block fixed top-6 right-6 w-48">
-                <TableOfContents />
+                <TableOfContents items={variants.map(v => ({ id: v.id, name: v.name }))} />
             </aside>
         </div>
     );

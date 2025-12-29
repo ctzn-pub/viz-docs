@@ -22,7 +22,7 @@ import { REGISTRY } from '@/lib/registry-data';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
-const DOMAIN_ORDER = ['Generic', 'Health', 'Survey', 'Geographic', 'Statistical', 'Dashboards'] as const;
+const DOMAIN_ORDER = ['Generic', 'Health', 'Survey', 'Geographic', 'Statistical', 'Dashboards', 'Reference'] as const;
 
 // Build a flat list of nav items grouped by domain
 function buildNavItems() {
@@ -58,6 +58,14 @@ function buildNavItems() {
         }
     }
 
+    // Add Reference section items
+    items.push({
+        domain: 'Reference',
+        name: 'Sample Data',
+        path: '/docs/data',
+        icon: <Database className="w-4 h-4" />,
+    });
+
     return items;
 }
 
@@ -65,9 +73,8 @@ function getIconForCategory(categoryPath: string): React.ReactNode {
     const icons: Record<string, React.ReactNode> = {
         'recharts/generic': <LineChart className="w-4 h-4" />,
         'recharts/brfss': <Activity className="w-4 h-4" />,
-        'recharts/gss': <Search className="w-4 h-4" />,
         'recharts/ess': <Database className="w-4 h-4" />,
-        'plot/gss': <PieChart className="w-4 h-4" />,
+        'gss': <Search className="w-4 h-4" />,
         'plot/geo': <Map className="w-4 h-4" />,
         'plot/health': <Activity className="w-4 h-4" />,
         'plot/brfss': <BarChart3 className="w-4 h-4" />,

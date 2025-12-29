@@ -2,9 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { ExternalLink, Terminal, Code2, Activity, Database, ChevronDown } from 'lucide-react';
+import { ExternalLink, Terminal, Code2, Activity, Database } from 'lucide-react';
 import { getSampleDataUrl, getGitHubUrl } from '@/lib/registry-data';
-import { getTransformForPath } from '@/lib/data-transforms';
 import { CopyButton } from '@/components/CopyButton';
 import { TableOfContents } from '@/components/TableOfContents';
 
@@ -12,24 +11,10 @@ function LocalCopyButton({ text }: { text: string }) {
     return <CopyButton text={text} className="h-8 w-8" />;
 }
 
-// Data transform code snippets for display
-const TRANSFORM_CODE: Record<string, string> = {
-    'plot/stats/density-basic-v1': `(rawData) => ({
-    data: Array.isArray(rawData) ? rawData : []
-})`,
-    'plot/stats/density-overlay-v1': `(rawData) => ({
-    data: Array.isArray(rawData) ? rawData : []
-})`,
-    'recharts/generic/histogram-v1': `(rawData) => ({
-    data: Array.isArray(rawData) ? rawData : []
-})`,
-};
-
-// Import density components
-import DensityBasic from '@/viz/components/plot/stats/density-basic-v1';
-import DensityOverlay from '@/viz/components/plot/stats/density-overlay-v1';
-import HistogramRecharts from '@/viz/components/recharts/generic/histogram-v1';
-import Distribution from '@/viz/components/plot/stats/distribution-v1';
+// Import all health scatter components
+import HealthScatterBasic from '@/viz/components/plot/health/health-scatter-basic-v1';
+import HealthScatterRegression from '@/viz/components/plot/health/health-scatter-regression-v1';
+import HealthScatterFaceted from '@/viz/components/plot/health/health-scatter-faceted-v1';
 
 interface VariantConfig {
     id: string;
@@ -38,56 +23,41 @@ interface VariantConfig {
     sampleData: string;
     componentPath: string;
     Component: React.ComponentType<any>;
-    isPlot?: boolean;
 }
 
 const variants: VariantConfig[] = [
     {
         id: 'basic',
         name: 'Basic',
-        description: 'Single variable density distribution curve showing the frequency of values across a continuous range.',
-        sampleData: 'county_sample.json',
-        componentPath: 'plot/stats/density-basic-v1',
-        Component: DensityBasic,
-        isPlot: true,
-    },
-    {
-        id: 'overlay',
-        name: 'Overlay',
-        description: 'Overlaid density curves comparing distributions across different groups or categories.',
+        description: 'A foundational scatter plot for examining the relationship between health metrics, such as Obesity and Diabetes prevalence.',
         sampleData: 'health-obesity-diabetes.json',
-        componentPath: 'plot/stats/density-overlay-v1',
-        Component: DensityOverlay,
-        isPlot: true,
+        componentPath: 'plot/health/health-scatter-basic-v1',
+        Component: HealthScatterBasic,
     },
     {
-        id: 'histogram',
-        name: 'Histogram',
-        description: 'Binned histogram with reference lines for mean/median, showing frequency distribution of values.',
-        sampleData: 'county_sample.json',
-        componentPath: 'recharts/generic/histogram-v1',
-        Component: HistogramRecharts,
-        isPlot: false,
+        id: 'regression',
+        name: 'Regression',
+        description: 'Combines point-level data with a statistical trend line to highlight correlations and model predictions.',
+        sampleData: 'health-obesity-diabetes.json',
+        componentPath: 'plot/health/health-scatter-regression-v1',
+        Component: HealthScatterRegression,
     },
     {
-        id: 'distribution',
-        name: 'Distribution',
-        description: 'Area + line distribution plot with reference line, using ZIP health data loaded from parquet.',
-        sampleData: 'zip-health-data.json',
-        componentPath: 'plot/stats/distribution-v1',
-        Component: Distribution,
-        isPlot: true,
+        id: 'faceted',
+        name: 'Faceted',
+        description: 'Uses "Small Multiples" (faceting) to compare relationships across different categories simultaneously.',
+        sampleData: 'health-obesity-diabetes.json',
+        componentPath: 'plot/health/health-scatter-faceted-v1',
+        Component: HealthScatterFaceted,
     },
 ];
 
 function VariantSection({ variant }: { variant: VariantConfig }) {
-    const [transformedData, setTransformedData] = useState<any>(null);
+    const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [transformOpen, setTransformOpen] = useState(false);
 
     const githubUrl = getGitHubUrl(variant.componentPath);
-    const transformCode = TRANSFORM_CODE[variant.componentPath];
 
     useEffect(() => {
         const fetchData = async () => {
@@ -96,11 +66,7 @@ function VariantSection({ variant }: { variant: VariantConfig }) {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error('Failed to fetch data');
                 const rawData = await response.json();
-
-                // Apply the component-specific transform
-                const transform = getTransformForPath(variant.componentPath);
-                const data = transform ? transform(rawData) : rawData;
-                setTransformedData(data);
+                setData(rawData);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to load data');
             } finally {
@@ -108,7 +74,7 @@ function VariantSection({ variant }: { variant: VariantConfig }) {
             }
         };
         fetchData();
-    }, [variant.sampleData, variant.componentPath]);
+    }, [variant.sampleData]);
 
     const Component = variant.Component;
 
@@ -122,10 +88,7 @@ function VariantSection({ variant }: { variant: VariantConfig }) {
                     <p className="text-muted-foreground">{variant.description}</p>
                 </div>
 
-                <div className={cn(
-                    "rounded-xl border border-border shadow-lg overflow-hidden min-h-[400px] flex items-center justify-center relative",
-                    variant.isPlot ? "bg-white dark:bg-[#fafafa]" : "bg-card"
-                )}>
+                <div className="rounded-xl border border-border shadow-lg overflow-hidden min-h-[400px] flex items-center justify-center relative bg-white dark:bg-[#fafafa]">
                     <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[radial-gradient(#000_1px,transparent_1px)] dark:bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
                     <div className="w-full p-6 relative z-10 flex justify-center">
                         {loading ? (
@@ -142,12 +105,8 @@ function VariantSection({ variant }: { variant: VariantConfig }) {
                                 <p className="text-sm text-muted-foreground max-w-xs mx-auto">{error}</p>
                             </div>
                         ) : (
-                            <div className={cn("w-full max-w-3xl flex justify-center", variant.isPlot && "text-[#1a1a1a]")}>
-                                <Component
-                                    {...transformedData}
-                                    width={600}
-                                    height={400}
-                                />
+                            <div className="w-full max-w-4xl flex justify-center text-[#1a1a1a]">
+                                <Component data={data} />
                             </div>
                         )}
                     </div>
@@ -184,37 +143,6 @@ function VariantSection({ variant }: { variant: VariantConfig }) {
                     </div>
                 </div>
 
-                {/* Data Transform Accordion */}
-                {transformCode && (
-                    <div className="rounded-lg border border-border bg-card/50 overflow-hidden">
-                        <button
-                            onClick={() => setTransformOpen(!transformOpen)}
-                            className="w-full flex items-center justify-between p-4 text-left hover:bg-secondary/30 transition-colors"
-                        >
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                                <Code2 className="w-4 h-4" />
-                                <span className="text-xs font-bold uppercase tracking-wide">Data Transform</span>
-                            </div>
-                            <ChevronDown className={cn(
-                                "w-4 h-4 text-muted-foreground transition-transform",
-                                transformOpen && "rotate-180"
-                            )} />
-                        </button>
-                        {transformOpen && (
-                            <div className="border-t border-border">
-                                <div className="relative">
-                                    <pre className="p-4 text-sm font-mono bg-secondary/30 overflow-x-auto">
-                                        <code>{transformCode}</code>
-                                    </pre>
-                                    <div className="absolute top-2 right-2">
-                                        <LocalCopyButton text={transformCode} />
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
-
                 <div className="flex items-center gap-4 text-sm">
                     <a
                         href={githubUrl}
@@ -232,16 +160,16 @@ function VariantSection({ variant }: { variant: VariantConfig }) {
     );
 }
 
-export default function DensityPlotsPage() {
+export default function ScatterplotsPage() {
     return (
         <div className="relative">
             {/* Main content */}
             <div className="py-6 px-4 max-w-4xl mx-auto lg:mr-56 space-y-12">
                 {/* Header */}
                 <div className="space-y-4">
-                    <h1 className="text-4xl font-black tracking-tight text-foreground">Density Plots</h1>
+                    <h1 className="text-4xl font-black tracking-tight text-foreground">Scatterplots</h1>
                     <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl">
-                        Distribution visualizations showing the probability density of continuous variables. Compare single distributions or overlay multiple groups.
+                        Scatter plots for examining relationships between health metrics like obesity and diabetes prevalence, with options for regression lines and faceted comparisons.
                     </p>
 
                     {/* Quick nav (mobile) */}
