@@ -290,6 +290,12 @@ export const REGISTRY: Record<string, CategoryMeta> = {
         description: 'Horizontal bars with contrasting subgroup dots for demographic comparison',
         sampleData: 'https://ontopic-public-data.t3.storage.dev/cdc-data/brfss_state/examples/DRNKANY5_income.json',
       },
+      {
+        id: 'pca-arrow-plot-v1',
+        name: 'PCA Circle Arrow Plot',
+        description: 'PCA variables plot with arrows and unit circle',
+        sampleData: '/data/pca_variables_plot_complete.json',
+      },
     ],
   },
   'composite/dashboards': {
@@ -378,8 +384,8 @@ export function getFamilyByPath(path: string) {
 
 // Get sample data URL (original external URL - for display)
 export function getSampleDataUrl(filename: string) {
-  // Handle absolute URLs
-  if (filename.startsWith('http://') || filename.startsWith('https://')) {
+  // Handle absolute URLs or paths starting with /
+  if (filename.startsWith('http://') || filename.startsWith('https://') || filename.startsWith('/')) {
     return filename;
   }
   return `${SAMPLE_DATA_BASE}/${filename}`;

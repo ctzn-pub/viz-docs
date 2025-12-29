@@ -72,7 +72,8 @@ Each chapter follows a rigid structure to maintain the integrity of the data con
 21. **Distributions**: Histograms, Density, and ECDFs.
 22. **Relationships**: Binned scatter plots and hexbins for large datasets.
 23. **Regression Diagnostics**: Residual plots as visual validity checks.
-24. **Coefficient Plots**: Centralizing model results without tables.
+24. **PCA Circle Arrow Plot**: Visualizing variable contributions.
+25. **Coefficient Plots**: Centralizing model results without tables.
 25. **Fixed Effects (Fixest)**: Visualizing FE structure and interpretability.
 26. **Difference-in-Differences**: Parallel trends and counterfactuals.
 27. **Event Studies**: Dynamic effects and omitted period conventions.

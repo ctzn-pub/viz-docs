@@ -1,0 +1,193 @@
+{
+  "config": {
+    "title": "PCA Variables - Colored by Contribution to PC1-PC2",
+    "x_label": "Dim1 (24.4%)",
+    "y_label": "Dim2 (23.3%)",
+    "color_gradient": {
+      "low": "#00AFBB",
+      "mid": "#E7B800",
+      "high": "#FC4E07"
+    },
+    "contrib_range": {
+      "min": 0,
+      "max": 100
+    }
+  },
+  "variables": [
+    {
+      "name": "location_id",
+      "x": 0.1301,
+      "y": 0.1263,
+      "contrib": 0.5519,
+      "cos2": 0.0329
+    },
+    {
+      "name": "fips_code",
+      "x": -0.1786,
+      "y": -0.1053,
+      "contrib": 0.7137,
+      "cos2": 0.043
+    },
+    {
+      "name": "obesity_rate",
+      "x": -0.7398,
+      "y": 0.4356,
+      "contrib": 12.2366,
+      "cos2": 0.737
+    },
+    {
+      "name": "smoking_rate",
+      "x": -0.7375,
+      "y": 0.458,
+      "contrib": 12.5264,
+      "cos2": 0.7537
+    },
+    {
+      "name": "population",
+      "x": 0.6702,
+      "y": 0.3814,
+      "contrib": 9.8669,
+      "cos2": 0.5946
+    },
+    {
+      "name": "population_density",
+      "x": 0.4716,
+      "y": 0.2252,
+      "contrib": 4.5189,
+      "cos2": 0.2731
+    },
+    {
+      "name": "area_deprivation_index",
+      "x": -0.607,
+      "y": 0.723,
+      "contrib": 15.0316,
+      "cos2": 0.8911
+    },
+    {
+      "name": "percent_white",
+      "x": -0.2962,
+      "y": -0.7401,
+      "contrib": 10.8591,
+      "cos2": 0.6354
+    },
+    {
+      "name": "percent_unemployed",
+      "x": -0.1712,
+      "y": 0.5454,
+      "contrib": 5.596,
+      "cos2": 0.3267
+    },
+    {
+      "name": "percent_poverty",
+      "x": -0.2876,
+      "y": 0.7531,
+      "contrib": 11.1118,
+      "cos2": 0.6499
+    },
+    {
+      "name": "percent_married",
+      "x": -0.066,
+      "y": -0.6927,
+      "contrib": 8.3232,
+      "cos2": 0.4841
+    },
+    {
+      "name": "percent_hispanic",
+      "x": 0.3742,
+      "y": 0.46,
+      "contrib": 5.9357,
+      "cos2": 0.3516
+    },
+    {
+      "name": "percent_households_with_kids_under18",
+      "x": 0.2029,
+      "y": 0.4112,
+      "contrib": 3.5834,
+      "cos2": 0.2103
+    },
+    {
+      "name": "percent_foreign_born",
+      "x": 0.7335,
+      "y": 0.3461,
+      "contrib": 10.8815,
+      "cos2": 0.6578
+    },
+    {
+      "name": "percent_college_graduated",
+      "x": 0.6634,
+      "y": -0.4519,
+      "contrib": 10.729,
+      "cos2": 0.6443
+    },
+    {
+      "name": "percent_black",
+      "x": 0.0319,
+      "y": 0.5948,
+      "contrib": 6.1014,
+      "cos2": 0.3548
+    },
+    {
+      "name": "percent_asian",
+      "x": 0.7043,
+      "y": 0.0987,
+      "contrib": 8.3011,
+      "cos2": 0.5058
+    },
+    {
+      "name": "percent_over_65",
+      "x": -0.2965,
+      "y": -0.4995,
+      "contrib": 5.7322,
+      "cos2": 0.3374
+    },
+    {
+      "name": "median_income",
+      "x": 0.6691,
+      "y": -0.5264,
+      "contrib": 12.1077,
+      "cos2": 0.7248
+    },
+    {
+      "name": "median_age",
+      "x": -0.2781,
+      "y": -0.6193,
+      "contrib": 7.8658,
+      "cos2": 0.4609
+    },
+    {
+      "name": "average_household_size",
+      "x": 0.2375,
+      "y": 0.44,
+      "contrib": 4.2556,
+      "cos2": 0.2501
+    },
+    {
+      "name": "gini_simpson_race_diversity_index",
+      "x": 0.5137,
+      "y": 0.6002,
+      "contrib": 10.5239,
+      "cos2": 0.6242
+    },
+    {
+      "name": "gini_index",
+      "x": 0.1189,
+      "y": 0.2699,
+      "contrib": 1.4845,
+      "cos2": 0.087
+    },
+    {
+      "name": "median_home_value",
+      "x": 0.767,
+      "y": -0.2584,
+      "contrib": 10.795,
+      "cos2": 0.6551
+    },
+    {
+      "name": "average_commute_time",
+      "x": 0.7229,
+      "y": 0.3234,
+      "contrib": 10.3671,
+      "cos2": 0.6271
+    }
+  ]
+}

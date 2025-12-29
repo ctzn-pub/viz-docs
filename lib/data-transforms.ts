@@ -154,6 +154,9 @@ export const DATA_TRANSFORMS: Record<string, (rawData: any) => any> = {
             marginLeft: 150
         };
     },
+    'plot/stats/pca-arrow-plot-v1': (rawData) => ({
+        data: rawData
+    }),
     'plot/gss/timetrend-demo-v1': (rawData) => ({
         data: rawData,
         defaults: {

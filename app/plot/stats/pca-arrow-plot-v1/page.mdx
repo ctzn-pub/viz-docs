@@ -1,0 +1,38 @@
+import { ComponentDoc } from '@/components/ComponentDoc';
+import PCAArrowPlot from '@/viz/components/plot/stats/pca-arrow-plot-v1';
+
+<ComponentDoc
+  path="plot/stats/pca-arrow-plot-v1"
+  Component={PCAArrowPlot}
+>
+
+## Overview
+
+The PCA Circle Arrow Plot (also known as a variable correlation circle) visualizes the relationships between variables and the first two principal components.
+
+## Features
+
+- **Directional Vectors**: Each arrow represents a variable's contribution and direction in the PC1-PC2 space.
+- **Unit Circle**: Provides a reference for the maximum possible correlation (when a variable is perfectly represented by the shown components).
+- **Sequential Coloring**: Arrows are color-coded by their contribution percentage, highlighting the most influential variables.
+- **Dual Axes**: Dimensions are labeled with their respective variance explanation percentages.
+
+## Data Structure
+
+The component expects a JSON payload containing configuration and variable coordinates:
+
+```json
+{
+  "config": {
+    "title": "PCA Variables",
+    "x_label": "PC1 (24.4%)",
+    "y_label": "PC2 (23.3%)",
+    "color_gradient": { "low": "#00AFBB", "mid": "#E7B800", "high": "#FC4E07" }
+  },
+  "variables": [
+    { "name": "var1", "x": 0.5, "y": 0.3, "contrib": 12.5, "cos2": 0.75 }
+  ]
+}
+```
+
+</ComponentDoc>
