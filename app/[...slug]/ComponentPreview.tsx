@@ -1,46 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import dynamic from 'next/dynamic';
 import { Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import usTopoJSON from '@/app/data/geo/us_counties_10m.json';
+import { COMPONENT_MAP } from '@/lib/component-registry';
 
-// Dynamic component imports
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const componentMap: Record<string, React.ComponentType<any>> = {
-  'recharts/generic/timeseries-basic-v1': dynamic(() => import('@/viz/components/recharts/generic/timeseries-basic-v1')),
-  'recharts/generic/timeseries-dual-axis-v1': dynamic(() => import('@/viz/components/recharts/generic/timeseries-dual-axis-v1')),
-  'recharts/generic/timeseries-index-v1': dynamic(() => import('@/viz/components/recharts/generic/timeseries-index-v1')),
-  'recharts/generic/demographic-breakdown-v1': dynamic(() => import('@/viz/components/recharts/generic/demographic-breakdown-v1')),
-  'recharts/brfss/state-bar-v1': dynamic(() => import('@/viz/components/recharts/brfss/state-bar-v1')),
-  'recharts/brfss/state-bar-sortable-v1': dynamic(() => import('@/viz/components/recharts/brfss/state-bar-sortable-v1')),
-  'recharts/gss/timetrend-demo-v1': dynamic(() => import('@/viz/components/recharts/gss/timetrend-demo-v1')),
-  'recharts/ess/scatter-regression-v1': dynamic(() => import('@/viz/components/recharts/ess/scatter-regression-v1')),
-  'plot/geo/state-map-v1': dynamic(() => import('@/viz/components/plot/geo/state-map-v1')),
-  'plot/geo/bubble-map-v1': dynamic(() => import('@/viz/components/plot/geo/bubble-map-v1')),
-  'plot/geo/choropleth-v1': dynamic(() => import('@/viz/components/plot/geo/choropleth-v1')),
-  'plot/geo/europe-map-v1': dynamic(() => import('@/viz/components/plot/geo/europe-map-v1')),
-  'plot/geo/zip-map-v1': dynamic(() => import('@/viz/components/plot/geo/zip-map-v1')),
-  'plot/geo/density-map-geo-v1': dynamic(() => import('@/viz/components/plot/geo/density-map-geo-v1')),
-  'plot/health/health-scatter-basic-v1': dynamic(() => import('@/viz/components/plot/health/health-scatter-basic-v1')),
-  'plot/health/health-scatter-regression-v1': dynamic(() => import('@/viz/components/plot/health/health-scatter-regression-v1')),
-  'plot/health/health-scatter-faceted-v1': dynamic(() => import('@/viz/components/plot/health/health-scatter-faceted-v1')),
-  'plot/stats/odds-ratio-basic-v1': dynamic(() => import('@/viz/components/plot/stats/odds-ratio-basic-v1')),
-  'plot/stats/odds-ratio-forest-v1': dynamic(() => import('@/viz/components/plot/stats/odds-ratio-forest-v1')),
-  'plot/stats/odds-ratio-dotplot-v1': dynamic(() => import('@/viz/components/plot/stats/odds-ratio-dotplot-v1')),
-  'plot/stats/correlation-heatmap-v1': dynamic(() => import('@/viz/components/plot/stats/correlation-heatmap-v1')),
-  'plot/stats/density-overlay-v1': dynamic(() => import('@/viz/components/plot/stats/density-overlay-v1')),
-  'plot/stats/density-basic-v1': dynamic(() => import('@/viz/components/plot/stats/density-basic-v1')),
-  'plot/stats/distribution-v1': dynamic(() => import('@/viz/components/plot/stats/distribution-v1')),
-  'plot/stats/demographic-panel-v1': dynamic(() => import('@/viz/components/plot/stats/demographic-panel-v1')),
-  'plot/stats/split-bar-v1': dynamic(() => import('@/viz/components/plot/stats/split-bar-v1')),
-  'plot/brfss/state-bar-v1': dynamic(() => import('@/viz/components/plot/brfss/state-bar-v1')),
-  'plot/timeseries/multiline-v1': dynamic(() => import('@/viz/components/plot/timeseries/multiline-v1')),
-  'plot/gss/timetrend-demo-v1': dynamic(() => import('@/viz/components/plot/gss/timetrend-demo-v1')),
-  'composite/dashboards/brfss-dashboard-v1': dynamic(() => import('@/viz/components/composite/brfss-dashboard-v1')),
-};
+// Get component from unified registry
+const getComponent = (path: string) => COMPONENT_MAP[path];
 
 export function CopyButton({ text, className }: { text: string; className?: string }) {
   const [copied, setCopied] = useState(false);
@@ -65,7 +33,7 @@ interface ComponentPreviewProps {
 }
 
 export function ComponentPreview({ path, data, error }: ComponentPreviewProps) {
-  const Component = componentMap[path];
+  const Component = getComponent(path);
 
   if (!Component) {
     return <div className="text-muted-foreground">Component not found</div>;

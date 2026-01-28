@@ -1,23 +1,160 @@
 # The Architecture of Evidence
 
-Welcome to the **@ontopic/viz** documentation. This library is both a philosophical and technical guide to building credible visual evidence on the web—where R/Python’s statistical rigor meets modern interactive publishing.
+Welcome to the **@ontopic/viz** documentation. This library is both a philosophical and technical guide to building credible visual evidence on the web—where R/Python's statistical rigor meets modern interactive publishing.
 
-## 🧬 This is a Living Specification
+---
+
+## Getting Started
+
+### Install a Component
+
+Use the CLI to add any component to your project:
+
+```bash
+npx @ontopic/viz add <component-path>
+```
+
+For example:
+```bash
+npx @ontopic/viz add recharts/generic/timeseries-basic-v1
+npx @ontopic/viz add plot/geo/state-map-v1
+```
+
+### Use in Your App
+
+```tsx
+import { TimeseriesBasic } from '@/components/viz/timeseries-basic-v1';
+
+export default function Dashboard() {
+  const data = {
+    data: [
+      { date: '2020-01', value: 42.5 },
+      { date: '2020-02', value: 43.1 },
+    ],
+    metadata: { title: 'Monthly Trends' }
+  };
+
+  return <TimeseriesBasic {...data} />;
+}
+```
+
+### Fetch Remote Data
+
+Components work seamlessly with data from any API or CDN:
+
+```tsx
+const response = await fetch('https://your-api.com/data.json');
+const data = await response.json();
+return <StateMap {...data} />;
+```
+
+---
+
+## This is a Living Specification
 
 Unlike a static textbook, this project serves as the **Documentation of the Data Contract** for human and AI collaborators. It defines the formal bridge between analytical models and the visual interface.
 
-## 🛠 The Technology Stack
+---
 
-- **Observable Plot**: technical, exploratory, and statistical graphics (the “ggplot2 of the web”).
+## The Technology Stack
+
+- **Observable Plot**: technical, exploratory, and statistical graphics (the "ggplot2 of the web").
 - **Recharts**: polished, operational dashboards and executive summaries.
 - **Tigris & Next.js**: the pipeline for delivering asynchronous model outputs from Python/R agents to the browser.
 
-## 🤖 The Agentic Workflow
+---
+
+## The Agentic Workflow
 
 1. **Estimate**: An agent (or human) runs a model in Python or R.
 2. **Contract**: The analysis is serialized into a JSON payload conforming to the specs defined in this handbook.
 3. **Dispatch**: The payload is pushed to a **Tigris S3** bucket.
 4. **Render**: The Next.js frontend detects the new data and hydrates the corresponding component instantly.
+
+---
+
+## Data Contracts
+
+Each component expects data in a specific shape. Here are the common patterns:
+
+### Time Series
+```json
+{
+  "data": [
+    { "date": "2020-01", "value": 42.5, "series": "Group A" }
+  ],
+  "metadata": {
+    "title": "Trend Analysis",
+    "yLabel": "Percentage",
+    "source": "CDC BRFSS 2023"
+  }
+}
+```
+
+### Geographic (State/County)
+```json
+{
+  "data": [
+    { "fips": "06", "value": 28.5, "name": "California" }
+  ],
+  "metadata": {
+    "title": "State Prevalence",
+    "metric": "Obesity Rate %"
+  }
+}
+```
+
+### Demographic Breakdown
+```json
+{
+  "categories": ["18-24", "25-34", "35-44", "45-54", "55+"],
+  "data": [
+    {
+      "category": "18-24",
+      "value": 22.1,
+      "ci_low": 20.5,
+      "ci_high": 23.7
+    }
+  ],
+  "metadata": {
+    "title": "Age Distribution",
+    "variable": "DRNKANY5"
+  }
+}
+```
+
+### Statistical (Odds Ratios)
+```json
+{
+  "data": [
+    {
+      "label": "Age 65+",
+      "odds_ratio": 1.45,
+      "ci_low": 1.21,
+      "ci_high": 1.73,
+      "p_value": 0.001
+    }
+  ],
+  "metadata": {
+    "reference": "Age 18-24",
+    "model": "Logistic Regression"
+  }
+}
+```
+
+---
+
+## Component Categories
+
+| Category | Path Prefix | Description |
+|----------|-------------|-------------|
+| Generic Charts | `recharts/generic` | Reusable time series, demographics |
+| BRFSS Health | `recharts/brfss`, `plot/brfss` | CDC health surveillance |
+| GSS Survey | `gss` | General Social Survey trends |
+| ESS Survey | `recharts/ess` | European Social Survey |
+| Geographic | `plot/geo` | Maps and choropleths |
+| Statistical | `plot/stats` | Odds ratios, density, correlation |
+| Dashboards | `composite/dashboards` | Multi-view layouts |
 
 ---
 

@@ -106,12 +106,52 @@ export const DATA_TRANSFORMS: Record<string, (rawData: any) => any> = {
             labels: { valueSuffix: '%' }
         };
     },
-    'recharts/brfss/state-bar-v1': (rawData) => ({
-        data: rawData?.state_data ? rawData : { state_data: {}, clean_title: '', year: '', question: '' }
-    }),
-    'recharts/brfss/state-bar-sortable-v1': (rawData) => ({
-        data: rawData?.state_data ? rawData : { state_data: {}, clean_title: '', year: '', question: '' }
-    }),
+    'recharts/brfss/state-bar-v1': (rawData) => {
+        // Handle states array format from DRNKANY5_state_map.json
+        if (rawData?.states && Array.isArray(rawData.states)) {
+            const state_data: Record<string, { state_name: string; overall: number | null }> = {};
+            rawData.states.forEach((s: any) => {
+                state_data[s.state_abbr] = {
+                    state_name: s.state_name,
+                    overall: s.value
+                };
+            });
+            return {
+                data: {
+                    state_data,
+                    clean_title: rawData.clean_title || '',
+                    question: rawData.question || '',
+                    response: rawData.response || '',
+                    year: rawData.year || ''
+                }
+            };
+        }
+        // Fallback for state_data format
+        return { data: rawData?.state_data ? rawData : { state_data: {}, clean_title: '', year: '', question: '', response: '' } };
+    },
+    'recharts/brfss/state-bar-sortable-v1': (rawData) => {
+        // Handle states array format from DRNKANY5_state_map.json
+        if (rawData?.states && Array.isArray(rawData.states)) {
+            const state_data: Record<string, { state_name: string; overall: number | null }> = {};
+            rawData.states.forEach((s: any) => {
+                state_data[s.state_abbr] = {
+                    state_name: s.state_name,
+                    overall: s.value
+                };
+            });
+            return {
+                data: {
+                    state_data,
+                    clean_title: rawData.clean_title || '',
+                    question: rawData.question || '',
+                    response: rawData.response || '',
+                    year: rawData.year || ''
+                }
+            };
+        }
+        // Fallback for state_data format
+        return { data: rawData?.state_data ? rawData : { state_data: {}, clean_title: '', year: '', question: '', response: '' } };
+    },
     'plot/brfss/state-bar-v1': (rawData) => {
         if (!rawData?.states) return { data: [], title: '', subtitle: '', valueLabel: '', valueUnit: '', caption: '' };
         return {

@@ -1,36 +1,141 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# @ontopic/viz Documentation
 
-## Getting Started
+A curated registry of production-ready data visualization components built with **Recharts** and **Observable Plot**. Designed for health surveillance, survey analysis, and statistical reporting.
 
-First, run the development server:
+## Quick Start
+
+### Install a Component
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npx @ontopic/viz add <component-path>
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Example:
+```bash
+npx @ontopic/viz add recharts/generic/timeseries-basic-v1
+npx @ontopic/viz add plot/geo/state-map-v1
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Browse Components
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Visit the [live documentation](https://viz.ontopic.io) to explore all available components with interactive previews.
 
-## Learn More
+## Available Components
 
-To learn more about Next.js, take a look at the following resources:
+### Generic Charts (`recharts/generic`)
+| Component | Description |
+|-----------|-------------|
+| `timeseries-basic-v1` | Simple time series line chart |
+| `timeseries-dual-axis-v1` | Time series with two Y-axes |
+| `timeseries-index-v1` | Normalized index comparison (rebased to 100) |
+| `demographic-breakdown-v1` | Switchable chart with confidence intervals |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Health Surveillance (`recharts/brfss`, `plot/brfss`)
+| Component | Description |
+|-----------|-------------|
+| `state-bar-v1` | Horizontal bar chart by state |
+| `state-bar-sortable-v1` | Interactive sortable state comparison |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Survey Data (`gss`, `recharts/ess`)
+| Component | Description |
+|-----------|-------------|
+| `opinion-trends` | Time trends with presidential term backgrounds |
+| `scatter-regression-v1` | Scatter plot with OLS regression |
 
-## Deploy on Vercel
+### Geographic Maps (`plot/geo`)
+| Component | Description |
+|-----------|-------------|
+| `state-map-v1` | US state choropleth map |
+| `choropleth-v1` | County-level choropleth |
+| `bubble-map-v1` | Geographic bubble map |
+| `europe-map-v1` | European country choropleth |
+| `zip-map-v1` | ZIP code dot density map |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Statistical (`plot/stats`)
+| Component | Description |
+|-----------|-------------|
+| `odds-ratio-basic-v1` | Odds ratio with confidence intervals |
+| `odds-ratio-forest-v1` | Forest plot visualization |
+| `density-basic-v1` | Distribution density curve |
+| `correlation-heatmap-v1` | Correlation matrix heatmap |
+| `split-bar-v1` | Demographic comparison bars |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Dashboards (`composite/dashboards`)
+| Component | Description |
+|-----------|-------------|
+| `brfss-dashboard-v1` | Full BRFSS health indicator dashboard |
+
+## Data Contract
+
+Components expect data in specific JSON formats. Each component's documentation page shows the expected schema and provides sample data URLs.
+
+### Common Patterns
+
+**Time Series Data**
+```json
+{
+  "data": [
+    { "date": "2020-01", "value": 42.5, "series": "A" },
+    { "date": "2020-02", "value": 43.1, "series": "A" }
+  ],
+  "metadata": {
+    "title": "Monthly Trends",
+    "yLabel": "Percentage"
+  }
+}
+```
+
+**Geographic Data**
+```json
+{
+  "data": [
+    { "state": "CA", "value": 28.5, "name": "California" },
+    { "state": "TX", "value": 31.2, "name": "Texas" }
+  ],
+  "metadata": {
+    "title": "State Comparison",
+    "metric": "Prevalence %"
+  }
+}
+```
+
+**Demographic Breakdown**
+```json
+{
+  "categories": ["18-24", "25-34", "35-44", "45-54", "55-64", "65+"],
+  "data": [
+    { "category": "18-24", "value": 22.1, "ci_low": 20.5, "ci_high": 23.7 }
+  ]
+}
+```
+
+## Architecture
+
+This library bridges statistical computing (R/Python) with web visualization:
+
+1. **Estimate** - Run models in Python or R
+2. **Contract** - Serialize results to JSON matching component specs
+3. **Dispatch** - Push to Tigris S3 or any CDN
+4. **Render** - Next.js hydrates the component with live data
+
+## Development
+
+```bash
+# Install dependencies
+pnpm install
+
+# Run development server
+pnpm dev
+
+# Build for production
+pnpm build
+```
+
+## Links
+
+- [Component Registry](https://github.com/ctzn-pub/ontopic-viz-components) - Source code for all components
+- [Sample Data CDN](https://ontopic-public-data.t3.storage.dev/sample-data/) - Example datasets
+
+## License
+
+MIT
